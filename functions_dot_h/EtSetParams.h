@@ -2,25 +2,25 @@
 #ifndef Et_Set_Params_H
 #define Et_Set_Params_H
 
-void et_setup(aorc_forcing_data                 *aorc,
-                     solar_radiation_options    *solar_options,
-                     solar_radiation_parameters *solar_params,
-                     solar_radiation_forcing    *solar_forcing,
-                     evapotranspiration_options *set_et_options,
-                     evapotranspiration_params  *et_params,
-                     evapotranspiration_forcing *et_forcing,
-                     surface_radiation_params   *surf_rad_params,
-                     surface_radiation_forcing  *surf_rad_forcing);
+void et_setup(struct aorc_forcing_data*          aorc,
+              struct solar_radiation_options*    solar_options,
+              struct solar_radiation_parameters* solar_params,
+              struct solar_radiation_forcing*    solar_forcing,
+              struct evapotranspiration_options* set_et_options,
+              struct evapotranspiration_params*  et_params,
+              struct evapotranspiration_forcing* et_forcing,
+              struct surface_radiation_params*   surf_rad_params,
+              struct surface_radiation_forcing*  surf_rad_forcing);
 
-void et_setup(aorc_forcing_data          *aorc,
-                     solar_radiation_options    *solar_options,
-                     solar_radiation_parameters *solar_params,
-                     solar_radiation_forcing    *solar_forcing,
-                     evapotranspiration_options *set_et_options,
-                     evapotranspiration_params  *et_params,
-                     evapotranspiration_forcing *et_forcing,
-                     surface_radiation_params   *surf_rad_params,
-                     surface_radiation_forcing  *surf_rad_forcing)
+void et_setup(struct aorc_forcing_data*          aorc,
+              struct solar_radiation_options*    solar_options,
+              struct solar_radiation_parameters* solar_params,
+              struct solar_radiation_forcing*    solar_forcing,
+              struct evapotranspiration_options* set_et_options,
+              struct evapotranspiration_params*  et_params,
+              struct evapotranspiration_forcing* et_forcing,
+              struct surface_radiation_params*   surf_rad_params,
+              struct surface_radiation_forcing*  surf_rad_forcing)
 {
   // FLAGS
   int yes_aorc; // if TRUE then using AORC forcing data- if FALSE then we must calculate incoming short/longwave rad.
@@ -35,8 +35,8 @@ void et_setup(aorc_forcing_data          *aorc,
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.  CYCLE THROUGH THESE FOR THE UNIT TEST.
   //###################################################################################################
   // Set this flag to TRUE if meteorological inputs come from AORC
-  et_options.yes_aorc = TRUE;                      // if TRUE, it means that we are using AORC data.
-  et_options.shortwave_radiation_provided = FALSE;
+  set_et_options->yes_aorc = TRUE;                      // if TRUE, it means that we are using AORC data.
+  set_et_options->shortwave_radiation_provided = FALSE;
 
   //###################################################################################################
   // MAKE UP SOME TYPICAL AORC DATA.  THESE VALUES DRIVE THE UNIT TESTS.
@@ -44,16 +44,16 @@ void et_setup(aorc_forcing_data          *aorc,
   //read_aorc_data().  TODO: These data come from some aorc reading/parsing function.
   //---------------------------------------------------------------------------------------------------------------
 
-  aorc_forcing.incoming_longwave_W_per_m2     =  117.1;
-  aorc_forcing.incoming_shortwave_W_per_m2    =  599.7;
-  aorc_forcing.surface_pressure_Pa            =  101300.0;
-  aorc_forcing.specific_humidity_2m_kg_per_kg =  0.00778;      // results in a relative humidity of 40%
-  aorc_forcing.air_temperature_2m_K           =  25.0+TK;
-  aorc_forcing.u_wind_speed_10m_m_per_s       =  1.54;
-  aorc_forcing.v_wind_speed_10m_m_per_s       =  3.2;
-  aorc_forcing.latitude                       =  37.865211;
-  aorc_forcing.longitude                      =  -98.12345;
-  aorc_forcing.time                           =  111111112;
+  aorc->incoming_longwave_W_per_m2     =  117.1;
+  aorc->incoming_shortwave_W_per_m2    =  599.7;
+  aorc->surface_pressure_Pa            =  101300.0;
+  aorc->specific_humidity_2m_kg_per_kg =  0.00778;      // results in a relative humidity of 40%
+  aorc->air_temperature_2m_K           =  25.0+TK;
+  aorc->u_wind_speed_10m_m_per_s       =  1.54;
+  aorc->v_wind_speed_10m_m_per_s       =  3.2;
+  aorc->latitude                       =  37.865211;
+  aorc->longitude                      =  -98.12345;
+  aorc->time                           =  111111112;
 
 
   // populate the evapotranspiration forcing data structure:
@@ -62,69 +62,69 @@ void et_setup(aorc_forcing_data          *aorc,
 
   // ET forcing values that come from somewhere else...
   //---------------------------------------------------------------------------------------------------------------
-  et_forcing.canopy_resistance_sec_per_m   = 50.0; // TODO: from plant growth model
-  et_forcing.water_temperature_C           = 15.5; // TODO: from soil or lake thermal model
-  et_forcing.ground_heat_flux_W_per_sq_m=-10.0;    // TODO from soil thermal model.  Negative denotes downward.
+  et_forcing->canopy_resistance_sec_per_m   = 50.0; // TODO: from plant growth model
+  et_forcing->water_temperature_C           = 15.5; // TODO: from soil or lake thermal model
+  et_forcing->ground_heat_flux_W_per_sq_m=-10.0;    // TODO from soil thermal model.  Negative denotes downward.
 
-  if(et_options.yes_aorc==TRUE)
+  if(set_et_options->yes_aorc==TRUE)
   {
-    et_params.wind_speed_measurement_height_m=10.0;  // AORC uses 10m.  Must convert to wind speed at 2 m height.
+    et_params->wind_speed_measurement_height_m=10.0;  // AORC uses 10m.  Must convert to wind speed at 2 m height.
   }    
-  et_params.humidity_measurement_height_m=2.0; 
-  et_params.vegetation_height_m=0.12;   // used for unit test of aerodynamic resistance used in Penman Monteith method.     
-  et_params.zero_plane_displacement_height_m=0.0003;  // 0.03 cm for unit testing
-  et_params.momentum_transfer_roughness_length_m=0.0;  // zero means that default values will be used in routine.
-  et_params.heat_transfer_roughness_length_m=0.0;      // zero means that default values will be used in routine.
+  et_params->humidity_measurement_height_m=2.0; 
+  et_params->vegetation_height_m=0.12;   // used for unit test of aerodynamic resistance used in Penman Monteith method.     
+  et_params->zero_plane_displacement_height_m=0.0003;  // 0.03 cm for unit testing
+  et_params->momentum_transfer_roughness_length_m=0.0;  // zero means that default values will be used in routine.
+  et_params->heat_transfer_roughness_length_m=0.0;      // zero means that default values will be used in routine.
 
 
   // surface radiation parameter values that are a function of land cover.   Must be assigned from land cover type.
   //---------------------------------------------------------------------------------------------------------------
-  surf_rad_params.surface_longwave_emissivity=1.0; // this is 1.0 for granular surfaces, maybe 0.97 for water
-  surf_rad_params.surface_shortwave_albedo=0.22;  // this is a function of solar elev. angle for most surfaces.   
+  surf_rad_params->surface_longwave_emissivity=1.0; // this is 1.0 for granular surfaces, maybe 0.97 for water
+  surf_rad_params->surface_shortwave_albedo=0.22;  // this is a function of solar elev. angle for most surfaces.   
 
 
-  if(et_options.yes_aorc!=TRUE)
+  if(set_et_options->yes_aorc!=TRUE)
   {
     // these values are needed if we don't have incoming longwave radiation measurements.
-    surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m     = 440.1;     // must come from somewhere
-    surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m      = -1.0e+05;  // this huge negative value tells to calc.
-    surf_rad_forcing.air_temperature_C                           = 15.0;      // from some forcing data file
-    surf_rad_forcing.relative_humidity_percent                   = 63.0;      // from some forcing data file
-    surf_rad_forcing.ambient_temperature_lapse_rate_deg_C_per_km = 6.49;      // ICAO standard atmosphere lapse rate
-    surf_rad_forcing.cloud_cover_fraction                        = 0.6;       // from some forcing data file
-    surf_rad_forcing.cloud_base_height_m                         = 2500.0/3.281; // assumed 2500 ft.
+    surf_rad_forcing->incoming_shortwave_radiation_W_per_sq_m     = 440.1;     // must come from somewhere
+    surf_rad_forcing->incoming_longwave_radiation_W_per_sq_m      = -1.0e+05;  // this huge negative value tells to calc.
+    surf_rad_forcing->air_temperature_C                           = 15.0;      // from some forcing data file
+    surf_rad_forcing->relative_humidity_percent                   = 63.0;      // from some forcing data file
+    surf_rad_forcing->ambient_temperature_lapse_rate_deg_C_per_km = 6.49;      // ICAO standard atmosphere lapse rate
+    surf_rad_forcing->cloud_cover_fraction                        = 0.6;       // from some forcing data file
+    surf_rad_forcing->cloud_base_height_m                         = 2500.0/3.281; // assumed 2500 ft.
   }
 
     // these values are needed if we don't have incoming longwave radiation measurements.
-    surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m     = 440.1;     // must come from somewhere
-    surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m      = -1.0e+05;  // this huge negative value tells to calc.
-    surf_rad_forcing.air_temperature_C                           = 15.0;      // from some forcing data file
-    surf_rad_forcing.relative_humidity_percent                   = 63.0;      // from some forcing data file
-    surf_rad_forcing.ambient_temperature_lapse_rate_deg_C_per_km = 6.49;      // ICAO standard atmosphere lapse rate
-    surf_rad_forcing.cloud_cover_fraction                        = 0.6;       // from some forcing data file
-    surf_rad_forcing.cloud_base_height_m                         = 2500.0/3.281; // assumed 2500 ft.
+    surf_rad_forcing->incoming_shortwave_radiation_W_per_sq_m     = 440.1;     // must come from somewhere
+    surf_rad_forcing->incoming_longwave_radiation_W_per_sq_m      = -1.0e+05;  // this huge negative value tells to calc.
+    surf_rad_forcing->air_temperature_C                           = 15.0;      // from some forcing data file
+    surf_rad_forcing->relative_humidity_percent                   = 63.0;      // from some forcing data file
+    surf_rad_forcing->ambient_temperature_lapse_rate_deg_C_per_km = 6.49;      // ICAO standard atmosphere lapse rate
+    surf_rad_forcing->cloud_cover_fraction                        = 0.6;       // from some forcing data file
+    surf_rad_forcing->cloud_base_height_m                         = 2500.0/3.281; // assumed 2500 ft.
     
 
   // Surface radiation forcing parameter values that must come from other models
   //---------------------------------------------------------------------------------------------------------------
-  surf_rad_forcing.surface_skin_temperature_C = 12.0;  // TODO from soil thermal model or vegetation model.
+  surf_rad_forcing->surface_skin_temperature_C = 12.0;  // TODO from soil thermal model or vegetation model.
 
-  if(et_options.shortwave_radiation_provided=FALSE)
+  if(set_et_options->shortwave_radiation_provided=FALSE)
   {
     // populate the elements of the structures needed to calculate shortwave (solar) radiation, and calculate it
     // ### OPTIONS ###
-    solar_options.cloud_base_height_known=FALSE;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
+    solar_options->cloud_base_height_known=FALSE;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
 
     // ### PARAMS ###
-    solar_params.latitude_degrees      =  37.25;   // THESE VALUES ARE FOR THE UNIT TEST
-    solar_params.longitude_degrees     = -97.5554; // THESE VALUES ARE FOR THE UNIT TEST
-    solar_params.site_elevation_m      = 303.333;  // THESE VALUES ARE FOR THE UNIT TEST  
+    solar_params->latitude_degrees      =  37.25;   // THESE VALUES ARE FOR THE UNIT TEST
+    solar_params->longitude_degrees     = -97.5554; // THESE VALUES ARE FOR THE UNIT TEST
+    solar_params->site_elevation_m      = 303.333;  // THESE VALUES ARE FOR THE UNIT TEST  
 
     // ### FORCING ###
-    solar_forcing.cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 
-    solar_forcing.atmospheric_turbidity_factor =   2.0;   // 2.0 = clear mountain air, 5.0= smoggy air
-    solar_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
-    solar_forcing.zulu_time_h                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
+    solar_forcing->cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 
+    solar_forcing->atmospheric_turbidity_factor =   2.0;   // 2.0 = clear mountain air, 5.0= smoggy air
+    solar_forcing->day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
+    solar_forcing->zulu_time_h                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
 
     // UNIT TEST RESULTS
     // CALCULATED SOLAR FLUXES

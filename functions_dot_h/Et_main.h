@@ -24,8 +24,8 @@ double run_et_main(int et_method_option) {
   struct solar_radiation_parameters solar_params;
   struct solar_radiation_forcing    solar_forcing;
 
-  et_setup(aorc, solar_options, solar_params, solar_forcing, set_et_options,
-           et_params, et_forcing, surf_rad_params, surf_rad_forcing);
+  et_setup(&aorc, &solar_options, &solar_params, &solar_forcing, &set_et_options,
+           &et_params, &et_forcing, &surf_rad_params, &surf_rad_forcing);
 
   //et_method_option = 1;    use_energy_balance_method
   //et_method_option = 2;    use_aerodynamic_method
