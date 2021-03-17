@@ -1,3 +1,6 @@
+#ifndef ET_STRUCT_H
+#define ET_STRUCT_H
+
 #define TRUE  1
 #define FALSE 0
 
@@ -150,3 +153,5 @@ struct intermediate_vars
   //double water_latent_heat_of_vaporization_J_per_kg;
   double psychrometric_constant_Pa_per_C;      // gamma
 };
+
+#endif // ET_STRUCT_H

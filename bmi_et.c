@@ -5,42 +5,46 @@
 #include "Et_Calc_Function_test.hpp"
 
 #define INPUT_VAR_NAME_COUNT 5 // 
-#define OUTPUT_VAR_NAME_COUNT 2 // et_m_per_s; et_mm_per_d;
+#define OUTPUT_VAR_NAME_COUNT 1 // et_m_per_s; et_mm_per_d;
 
 //---------------------------------------------------------------------------------------------------------------------
 static const char *output_var_names[OUTPUT_VAR_NAME_COUNT] = {
   "et_m_per_s",
-  "et_mm_per_d"
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 static const char *output_var_types[OUTPUT_VAR_NAME_COUNT] = {
-  "double",
   "double"
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 static const int output_var_item_count[OUTPUT_VAR_NAME_COUNT] = {
-  1,
   1
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 static const char *output_var_units[OUTPUT_VAR_NAME_COUNT] = {
   "m s-1",
-  "mm s-1"
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 // Don't forget to update Get_value/Get_value_at_indices (and setter) implementation if these are adjusted
 static const char *input_var_names[INPUT_VAR_NAME_COUNT] = {
-  "wind",
-  "saturation_VP",
-  "actual_VP"
+  "incoming_longwave_W_per_m2",
+  "incoming_shortwave_W_per_m2",
+  "surface_pressure_Pa",
+  "specific_humidity_2m_kg_per_kg",
+  "air_temperature_2m_K",
+  "u_wind_speed_10m_m_per_s",
+  "v_wind_speed_10m_m_per_s"
 };
 
 //---------------------------------------------------------------------------------------------------------------------
 static const char *input_var_types[INPUT_VAR_NAME_COUNT] = {
+  "double",
+  "double",
+  "double",
+  "double",
   "double",
   "double",
   "double"
@@ -48,9 +52,13 @@ static const char *input_var_types[INPUT_VAR_NAME_COUNT] = {
 
 //---------------------------------------------------------------------------------------------------------------------
 static const char *input_var_units[INPUT_VAR_NAME_COUNT] = {
-  "m s-1",
+  "W m-2",
+  "W m-2",
   "Pa",
-  "Pa"
+  "kg kg-1",
+  "K",
+  "m s-1",
+  "m s-1"
 };
 
 //---------------------------------------------------------------------------------------------------------------------

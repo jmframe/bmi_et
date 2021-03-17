@@ -1,3 +1,6 @@
+#ifndef ET_WRAPPER_FUNCTION_H
+#define ET_WRAPPER_FUNCTION_H
+
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -93,6 +96,12 @@ double et_wrapper_function(struct aorc_forcing_data*          aorc_forcing,
   struct aorc_forcing_data aorc;
 
   struct evapotranspiration_options et_options;
+  if(et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
+  if(et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
+  if(et_options.use_combination_method ==TRUE)      printf("combination method:\n");
+  if(et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
+  if(et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
+  
   struct evapotranspiration_params  et_params;
   struct evapotranspiration_forcing et_forcing;
   struct intermediate_vars inter_vars;
@@ -281,3 +290,5 @@ double et_wrapper_function(struct aorc_forcing_data*          aorc_forcing,
   return et_m_per_s;
 
 }
+
+#endif  // ET_WRAPPER_FUNCTION_H

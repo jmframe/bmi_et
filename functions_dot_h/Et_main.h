@@ -1,3 +1,6 @@
+#ifndef Et_main_H
+#define Et_main_H
+
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -6,7 +9,7 @@
 #include "EtSetParams.h"
 
 double run_et_main(int et_method_option) {
-  
+
   struct evapotranspiration_options set_et_options;
   double et_m_per_s;
 
@@ -44,12 +47,16 @@ double run_et_main(int et_method_option) {
 
   if (et_method_option == 1)
     set_et_options.use_energy_balance_method   = TRUE;
+
   if (et_method_option == 2)
     set_et_options.use_aerodynamic_method      = TRUE;
+
   if (et_method_option == 3)
     set_et_options.use_combination_method      = TRUE;
+
   if (et_method_option == 4)
     set_et_options.use_priestley_taylor_method = TRUE;
+
   if (et_method_option == 5)
     set_et_options.use_penman_monteith_method  = TRUE;
 
@@ -59,3 +66,5 @@ double run_et_main(int et_method_option) {
 
   return et_m_per_s;
 }
+
+#endif

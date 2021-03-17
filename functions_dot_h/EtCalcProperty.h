@@ -1,3 +1,6 @@
+#ifndef ET_CALC_PPROPERTY_H
+#define ET_CALC_PPROPERTY_H
+
 #define TRUE  1
 #define FALSE 0
 
@@ -504,3 +507,5 @@ int is_fabs_less_than_eps(double a,double epsilon)  // returns true if fabs(a)<e
   if(fabs(a)<epsilon) return(TRUE);
   else                return(FALSE);
 }
+
+#endif // ET_CALC_PPROPERTY_H

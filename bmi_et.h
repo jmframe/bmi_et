@@ -1,12 +1,12 @@
-#ifndef CFE_BMI_CFE_H
-#define CFE_BMI_CFE_H
+#ifndef ET_BMI_ET_H
+#define ET_BMI_ET_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "bmi.h"
-#include "EtCalcFunction.hpp"
+#include "Et_main.h"
 
 /** Read number of lines in file and max line length, returning -1 if it does not exist or could not be read. */
 int read_file_line_counts(const char* file_name, int* line_count, int* max_line_length);
