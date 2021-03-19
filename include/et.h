@@ -77,6 +77,12 @@
 // the heat transfer roughness height "zoh" can be approximated as 0.1 * zom.
 //-----------------------------------------------------------------------------------------------------------------
 
+
+double numerator;
+double denominator;
+double saturation_vapor_pressure_Pa;
+double actual_vapor_pressure_Pa;
+
 //DATA STRUCTURE TO HOLD AORC FORCING DATA
 struct aorc_forcing_data
 {
@@ -165,18 +171,6 @@ struct surface_radiation_forcing
   double zulu_time;                    // (0.0-23.999999) hours
 };
 
-struct solar_radiation_forcing
-{
-  // element NAME                          DESCRIPTION                                                                  
-  //____________________________________________________________________________________________________________________
-  double cloud_cover_fraction;          // dimensionless (0-1).  1.0= overcast.  varies hourly
-  double cloud_base_height_m;           // not used if solar_radiation_options->cloud_base_height_known == FALSE
-  double atmospheric_turbidity_factor;  // Linke turbidity factor.  This dimensionless (2-5) parameter varies daily.
-                                      // Typ. not available: 2.0=clear mountain air, 2.5-3.5 normal, 5.0=v. smoggy air
-  double day_of_year;                   // this is a number from 1 to 365 or 366 if leap year
-  double zulu_time_h;                   // decimal hours, 0-23.999999999
-};
-
 struct solar_radiation_options
 {
   // element NAME                          DESCRIPTION
@@ -242,11 +236,9 @@ struct et_model{
 
   struct solar_radiation_options    solar_options;
   struct solar_radiation_parameters solar_params;
-  struct solar_radiation_forcing    solar_forcing;
-
   struct solar_radiation_results    solar_results;
 
-}
+};
 typedef struct et_model et_model;
 
 extern void alloc_et_model(et_model *model);

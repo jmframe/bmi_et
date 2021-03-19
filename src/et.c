@@ -2,6 +2,7 @@
 #define ET_FUNCTION_C
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 
@@ -14,6 +15,15 @@
 #include "../include/EtPriestleyTaylorMethod.h"
 #include "../include/EtPenmanMonteithMethod.h"
 
+int main()
+{
+  et_model *model;
+  model = (et_model *) malloc(sizeof(et_model));
+  et_setup(model);
+  run(model);
+  return 0;
+}
+
 extern void alloc_et_model(et_model *model) {
     // TODO: *******************
 }
@@ -22,9 +32,8 @@ extern void free_et_model(et_model *model) {
     // TODO: ******************
 }
 
-double run(et_model* model)
+extern int run(et_model* model)
 {
-
   if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
   if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
   if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
@@ -73,60 +82,59 @@ double run(et_model* model)
   }
   
   // we must calculate the net radiation before calling the ET subroutine.
-  if(et_options.use_aerodynamic_method==FALSE) 
+  if(model->et_options.use_aerodynamic_method==FALSE) 
   {
     // NOTE don't call this function use_aerodynamic_method option is TRUE
-    et_forcing.net_radiation_W_per_sq_m=calculate_net_radiation_W_per_sq_m(&et_options,&surf_rad_params, 
-                                                                         &surf_rad_forcing);
+    model->et_forcing.net_radiation_W_per_sq_m=calculate_net_radiation_W_per_sq_m(model);
   }
 
-  if(et_options.use_energy_balance_method ==TRUE)
-    et_m_per_s=evapotranspiration_energy_balance_method(&et_options,&et_params,&et_forcing);
-  if(et_options.use_aerodynamic_method ==TRUE)
-    et_m_per_s=evapotranspiration_aerodynamic_method(&et_options,&et_params,&et_forcing,&inter_vars);
-  if(et_options.use_combination_method ==TRUE)
-    et_m_per_s=evapotranspiration_combination_method(&et_options,&et_params,&et_forcing,&inter_vars);
-  if(et_options.use_priestley_taylor_method ==TRUE)
-    et_m_per_s=evapotranspiration_priestley_taylor_method(&et_options,&et_params,&et_forcing,&inter_vars);
-  if(et_options.use_penman_monteith_method ==TRUE)
-    et_m_per_s=evapotranspiration_penman_monteith_method(&et_options,&et_params,&et_forcing,&inter_vars);
+  if(model->et_options.use_energy_balance_method ==TRUE)
+    model->et_m_per_s=evapotranspiration_energy_balance_method(model);
+  if(model->et_options.use_aerodynamic_method ==TRUE)
+    model->et_m_per_s=evapotranspiration_aerodynamic_method(model);
+  if(model->et_options.use_combination_method ==TRUE)
+    model->et_m_per_s=evapotranspiration_combination_method(model);
+  if(model->et_options.use_priestley_taylor_method ==TRUE)
+    model->et_m_per_s=evapotranspiration_priestley_taylor_method(model);
+  if(model->et_options.use_penman_monteith_method ==TRUE)
+    model->et_m_per_s=evapotranspiration_penman_monteith_method(model);
 
-  if(et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
-  if(et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
-  if(et_options.use_combination_method ==TRUE)      printf("combination method:\n");
-  if(et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
-  if(et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
+  if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
+  if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
+  if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
+  if(model->et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
+  if(model->et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
                                                  
-  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6e m/s\n",et_m_per_s);
-  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",et_m_per_s*86400.0*1000.0);
-
-  return et_m_per_s;
-
+  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6e m/s\n",model->et_m_per_s);
+  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",model->et_m_per_s*86400.0*1000.0);
+  
+  return 0;
 }
 
-void et_setup(et_model* model, et_method_option)
+void et_setup(et_model* model)
 {
+  int et_method_option = 1;
   double saturation_vapor_pressure_Pa;
   double actual_vapor_pressure_Pa;
 
   //###################################################################################################
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.  CYCLE THROUGH THESE FOR THE UNIT TEST.
   //###################################################################################################
-  model->set_et_options.use_energy_balance_method   = FALSE;
-  model->set_et_options.use_aerodynamic_method      = FALSE;
-  model->set_et_options.use_combination_method      = FALSE;
-  model->set_et_options.use_priestley_taylor_method = FALSE;
-  model->set_et_options.use_penman_monteith_method  = FALSE;
+  model->et_options.use_energy_balance_method   = FALSE;
+  model->et_options.use_aerodynamic_method      = FALSE;
+  model->et_options.use_combination_method      = FALSE;
+  model->et_options.use_priestley_taylor_method = FALSE;
+  model->et_options.use_penman_monteith_method  = FALSE;
   if (et_method_option == 1)
-    model->set_et_options.use_energy_balance_method   = TRUE;
+    model->et_options.use_energy_balance_method   = TRUE;
   if (et_method_option == 2)
-    model->set_et_options.use_aerodynamic_method      = TRUE;
+    model->et_options.use_aerodynamic_method      = TRUE;
   if (et_method_option == 3)
-    model->set_et_options.use_combination_method      = TRUE;
+    model->et_options.use_combination_method      = TRUE;
   if (et_method_option == 4)
-    model->set_et_options.use_priestley_taylor_method = TRUE;
+    model->et_options.use_priestley_taylor_method = TRUE;
   if (et_method_option == 5)
-    model->set_et_options.use_penman_monteith_method  = TRUE;
+    model->et_options.use_penman_monteith_method  = TRUE;
   // Set this flag to TRUE if meteorological inputs come from AORC
   model->et_options.yes_aorc = TRUE;                      // if TRUE, it means that we are using AORC data.
   model->et_options.shortwave_radiation_provided = FALSE;
@@ -168,7 +176,6 @@ void et_setup(et_model* model, et_method_option)
   model->et_params.zero_plane_displacement_height_m=0.0003;  // 0.03 cm for unit testing
   model->et_params.momentum_transfer_roughness_length_m=0.0;  // zero means that default values will be used in routine.
   model->et_params.heat_transfer_roughness_length_m=0.0;      // zero means that default values will be used in routine.
-
 
   // surface radiation parameter values that are a function of land cover.   Must be assigned from land cover type.
   //---------------------------------------------------------------------------------------------------------------
@@ -214,10 +221,10 @@ void et_setup(et_model* model, et_method_option)
     model->solar_params.site_elevation_m      = 303.333;  // THESE VALUES ARE FOR THE UNIT TEST  
 
     // ### FORCING ###
-    model->solar_forcing.cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 
-    model->solar_forcing.atmospheric_turbidity_factor =   2.0;   // 2.0 = clear mountain air, 5.0= smoggy air
-    model->solar_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
-    model->solar_forcing.zulu_time_h                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
+    model->surf_rad_forcing.cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 
+    model->surf_rad_forcing.atmospheric_turbidity_factor =   2.0;   // 2.0 = clear mountain air, 5.0= smoggy air
+    model->surf_rad_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
+    model->surf_rad_forcing.zulu_time                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
 
     // UNIT TEST RESULTS
     // CALCULATED SOLAR FLUXES

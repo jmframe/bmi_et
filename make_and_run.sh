@@ -1,3 +1,2 @@
 #!/bin/bash
-gcc -o run Et_main.c
-./run 1
+gcc -o run ./src/et.c

@@ -3,26 +3,14 @@
 
 // FUNCTION AND SUBROUTINE PROTOTYPES
 
-double evapotranspiration_priestley_taylor_method
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing,
-  struct intermediate_vars *inter_vars
-);
+double evapotranspiration_priestley_taylor_method(et_model *model);
 
 //############################################################*
 // subroutine to calculate evapotranspiration using           *
 // Chow, Maidment, and Mays textbook                          *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double evapotranspiration_priestley_taylor_method
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing,
-  struct intermediate_vars *inter_vars
-)
+double evapotranspiration_priestley_taylor_method(et_model *model)
 {
   // local varibles
   double psychrometric_constant_Pa_per_C;
@@ -40,25 +28,25 @@ double evapotranspiration_priestley_taylor_method
   double delta;
   double gamma;
 
-  calculate_intermediate_variables(et_options, et_params, et_forcing, inter_vars);
+  calculate_intermediate_variables(model);
 
-  liquid_water_density_kg_per_m3 = inter_vars->liquid_water_density_kg_per_m3;
-  water_latent_heat_of_vaporization_J_per_kg=inter_vars->water_latent_heat_of_vaporization_J_per_kg;
-  vapor_pressure_deficit_Pa=inter_vars->vapor_pressure_deficit_Pa;
-  moist_air_gas_constant_J_per_kg_K=inter_vars->moist_air_gas_constant_J_per_kg_K;
-  moist_air_density_kg_per_m3=inter_vars->moist_air_density_kg_per_m3;
-  slope_sat_vap_press_curve_Pa_s=inter_vars->slope_sat_vap_press_curve_Pa_s;
-  water_latent_heat_of_vaporization_J_per_kg=inter_vars->water_latent_heat_of_vaporization_J_per_kg;
-  psychrometric_constant_Pa_per_C=inter_vars->psychrometric_constant_Pa_per_C;
+  liquid_water_density_kg_per_m3 = model->inter_vars.liquid_water_density_kg_per_m3;
+  water_latent_heat_of_vaporization_J_per_kg=model->inter_vars.water_latent_heat_of_vaporization_J_per_kg;
+  vapor_pressure_deficit_Pa=model->inter_vars.vapor_pressure_deficit_Pa;
+  moist_air_gas_constant_J_per_kg_K=model->inter_vars.moist_air_gas_constant_J_per_kg_K;
+  moist_air_density_kg_per_m3=model->inter_vars.moist_air_density_kg_per_m3;
+  slope_sat_vap_press_curve_Pa_s=model->inter_vars.slope_sat_vap_press_curve_Pa_s;
+  water_latent_heat_of_vaporization_J_per_kg=model->inter_vars.water_latent_heat_of_vaporization_J_per_kg;
+  psychrometric_constant_Pa_per_C=model->inter_vars.psychrometric_constant_Pa_per_C;
 
   delta=slope_sat_vap_press_curve_Pa_s;
   gamma=psychrometric_constant_Pa_per_C;
 
   lambda_et=0.0;
-  if( (et_options->use_aerodynamic_method == FALSE ) && (et_options->use_penman_monteith_method==FALSE) )
+  if( (model->et_options.use_aerodynamic_method == FALSE ) && (model->et_options.use_penman_monteith_method==FALSE) )
   {
     // This is equation 3.5.9 from Chow, Maidment, and Mays textbook.
-    lambda_et=et_forcing->net_radiation_W_per_sq_m;
+    lambda_et=model->et_forcing.net_radiation_W_per_sq_m;
     radiation_balance_evapotranspiration_rate_m_per_s=lambda_et/
                                         (liquid_water_density_kg_per_m3*water_latent_heat_of_vaporization_J_per_kg);
   }

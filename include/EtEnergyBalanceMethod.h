@@ -3,12 +3,7 @@
 
 // FUNCTION AND SUBROUTINE PROTOTYPES
 
-double evapotranspiration_energy_balance_method
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing
-);
+double evapotranspiration_energy_balance_method(et_model *model);
 
 
 //############################################################*
@@ -16,12 +11,7 @@ double evapotranspiration_energy_balance_method
 // Chow, Maidment, and Mays textbook                          *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double evapotranspiration_energy_balance_method
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing
-)
+double evapotranspiration_energy_balance_method(et_model *model)
 {
   // local varibles
   double water_latent_heat_of_vaporization_J_per_kg;
@@ -32,23 +22,23 @@ double evapotranspiration_energy_balance_method
   // from FAO document: cp specific heat at constant pressure, 1.013 10-3 [MJ kg-1 �C-1],
 
   // IF SOIL WATER TEMPERATURE NOT PROVIDED, USE A SANE VALUE
-  if(100.0 > et_forcing->water_temperature_C) et_forcing->water_temperature_C=22.0; // growing season
+  if(100.0 > model->et_forcing.water_temperature_C) model->et_forcing.water_temperature_C=22.0; // growing season
 
   // CALCULATE VARS NEEDED FOR THE ALL METHODS:
 
-  liquid_water_density_kg_per_m3 = calc_liquid_water_density_kg_per_m3(et_forcing->water_temperature_C); // rho_w
+  liquid_water_density_kg_per_m3 = calc_liquid_water_density_kg_per_m3(model->et_forcing.water_temperature_C); // rho_w
 
-  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*et_forcing->water_temperature_C;  // eqn 2.7.6 Chow etal. 
+  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*model->et_forcing.water_temperature_C;  // eqn 2.7.6 Chow etal. 
                                                                                               // aka 'lambda'
 
   // We need this in all options except for aerodynamic or Penman-Monteith methods.
   // Radiation balance is the simplest method.  Involves only radiation calculations, no aerodynamic calculations.
 
   lambda_et=0.0;
-  if( (et_options->use_aerodynamic_method == FALSE ) && (et_options->use_penman_monteith_method==FALSE) )
+  if( (model->et_options.use_aerodynamic_method == FALSE ) && (model->et_options.use_penman_monteith_method==FALSE) )
   {
     // This is equation 3.5.9 from Chow, Maidment, and Mays textbook.
-    lambda_et=et_forcing->net_radiation_W_per_sq_m;
+    lambda_et=model->et_forcing.net_radiation_W_per_sq_m;
     radiation_balance_evapotranspiration_rate_m_per_s=lambda_et/
                                   (liquid_water_density_kg_per_m3*water_latent_heat_of_vaporization_J_per_kg);
   }

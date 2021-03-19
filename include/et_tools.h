@@ -33,8 +33,7 @@ double calc_liquid_water_density_kg_per_m3(double water_temperature_C);
 // Hydrologic Science, Addison Wesley, 1990.                  *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double calculate_net_radiation_W_per_sq_m(et_model *model);
-
+double calculate_net_radiation_W_per_sq_m(et_model *model)
 {
   // local variables 
   double net_radiation_W_per_sq_m;
@@ -110,14 +109,14 @@ double calculate_net_radiation_W_per_sq_m(et_model *model);
 // Reference: http://www.fao.org/3/X0490E/x0490e06.htm        *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double calculate_aerodynamic_resistance(et_model *model);
+double calculate_aerodynamic_resistance(et_model *model)
 {
   // define local variables to ease computations:
-  double wind_speed_measurement_height_m = model->et_forcing.wind_speed_measurement_height_m;
-  double humidity_measurement_height_m = model->et_forcing.humidity_measurement_height_m; // default =2.0 [m],
-  double zero_plane_displacement_height_m = model->et_forcing.zero_plane_displacement_height_m;// depends on surface roughness [m],
-  double momentum_transfer_roughness_length_m = model->et_forcing.momentum_transfer_roughness_length_m; // [m],
-  double heat_transfer_roughness_length_m = model->et_forcing.heat_transfer_roughness_length_m;     // [m],
+  double wind_speed_measurement_height_m = model->et_params.wind_speed_measurement_height_m;
+  double humidity_measurement_height_m = model->et_params.humidity_measurement_height_m; // default =2.0 [m],
+  double zero_plane_displacement_height_m = model->et_params.zero_plane_displacement_height_m;// depends on surface roughness [m],
+  double momentum_transfer_roughness_length_m = model->et_params.momentum_transfer_roughness_length_m; // [m],
+  double heat_transfer_roughness_length_m = model->et_params.heat_transfer_roughness_length_m;     // [m],
   double wind_speed_m_per_s = model->et_forcing.wind_speed_m_per_s;                    // [m s-1].
 
   double ra,zm,zh,d,zom,zoh,k,uz;
@@ -237,8 +236,8 @@ void calculate_solar_radiation(et_model* model)
   double zulu_time_h;
   double optical_air_mass;
 
-  int et_doy = model->forcing.day_of_year;
-  int et_zulu_time = model->forcing.zulu_time_h;
+  int et_doy = model->surf_rad_forcing.day_of_year;
+  int et_zulu_time = model->surf_rad_forcing.zulu_time;
 
   solar_constant_W_per_sq_m = 1361.6;     // Dudock de Wit et al. 2017 GRL, approx. avg. value
 
@@ -282,7 +281,7 @@ void calculate_solar_radiation(et_model* model)
   antipodal_hour_angle_degrees    =            zulu_time_h*15.0; // see note on above figure
 
   // here I convert longitude of the observer to the same coordinate system to eliminate the problem of +-180 deg. long.
-  antipodal_obs_longitude_degrees =            180.0 - model->et_params.longitude_degrees;
+  antipodal_obs_longitude_degrees =            180.0 - model->solar_params.longitude_degrees;
 
   // here I convert these angles to points on a unit circle using the above coordinate system to go to a purely 
   // geometric representation.  This helps deal with problems related to +-180 deg.
@@ -301,7 +300,7 @@ void calculate_solar_radiation(et_model* model)
   // USE SIMPLER VARIABLE NAMES FOR THESE DENSE CALCULATIONS
   tau=local_hour_angle_radians;                    // local hour angle, radians
   delta=solar_declination_angle_radians;           // solar declination angle, radians
-  phi=model->et_params.latitude_degrees*M_PI/180.0;         // latitude, radians
+  phi=model->solar_params.latitude_degrees*M_PI/180.0;         // latitude, radians
 
   // calculate solar elevation angle, sin(alpha) 
 
@@ -320,7 +319,7 @@ void calculate_solar_radiation(et_model* model)
 
   model->solar_results.solar_azimuth_angle_degrees=azimuth*180.0/M_PI;      // convert to degrees  
 
-  model->results.solar_local_hour_angle_degrees=tau*180.0/M_PI;       // convert to degrees 
+  model->solar_results.solar_local_hour_angle_degrees=tau*180.0/M_PI;       // convert to degrees 
 
   if(alpha>0.0)  // the sun is over the horizon 
   { 
@@ -332,23 +331,23 @@ void calculate_solar_radiation(et_model* model)
                      (pow(sinalpha,3.0)+0.149864*pow(sinalpha,2.0)+0.0102963*sinalpha+0.000303978);
                   
     // the following comes from Ineichen and Perez, 2002 
-    fh1=exp(-1.0*model->et_params.site_elevation_m/8000.0);  // elev. in meters, effect of atmos. thickness on air mass
+    fh1=exp(-1.0*model->solar_params.site_elevation_m/8000.0);  // elev. in meters, effect of atmos. thickness on air mass
     b=0.664+0.163/fh1;
   
     // note, atm_turbidity is equal to Tlk in Ineichen and Perez, 2002.
-    Ic=b*Io*exp(-0.09*optical_air_mass*(model->et_forcing.atmospheric_turbidity_factor-1.0));  // clear sky radiation
+    Ic=b*Io*exp(-0.09*optical_air_mass*(model->surf_rad_forcing.atmospheric_turbidity_factor-1.0));  // clear sky radiation
 
     // adjust for cloudiness effects using procedure from Bras' Hydrology text
-    if(model->options.cloud_base_height_known==TRUE) 
+    if(model->solar_options.cloud_base_height_known==TRUE) 
     {
       // percent of cloudless insolation, z= cloud base elev km.
-      kshort=0.18+0.0853*model->et_forcing.cloud_base_height_m/1000.0;   // convert cloud base height to km for this calc.                                   
-      Ips=Ic*(1.0-(1.0-kshort)*model->et_forcing.cloud_cover_fraction);   // insolation considering clouds, Eagleson, 1970.
+      kshort=0.18+0.0853*model->surf_rad_forcing.cloud_base_height_m/1000.0;   // convert cloud base height to km for this calc.                                   
+      Ips=Ic*(1.0-(1.0-kshort)*model->surf_rad_forcing.cloud_cover_fraction);   // insolation considering clouds, Eagleson, 1970.
     }
     else
     {
       // cloud base elevation not known.
-      kshort=0.65*model->et_forcing.cloud_cover_fraction*model->et_forcing.cloud_cover_fraction;  // (TVA, 1972)
+      kshort=0.65*model->surf_rad_forcing.cloud_cover_fraction*model->surf_rad_forcing.cloud_cover_fraction;  // (TVA, 1972)
       Ips=Ic*(1.0-kshort);
     }
 
@@ -437,20 +436,20 @@ void calculate_intermediate_variables(et_model* model)
   // VPD
   vapor_pressure_deficit_Pa = air_saturation_vapor_pressure_Pa - air_actual_vapor_pressure_Pa;
 
-  moist_air_gas_constant_J_per_kg_K=287.0*(1.0+0.608*et_forcing->specific_humidity_2m_kg_per_kg); //R_a
+  moist_air_gas_constant_J_per_kg_K=287.0*(1.0+0.608*model->et_forcing.specific_humidity_2m_kg_per_kg); //R_a
 
-  moist_air_density_kg_per_m3=et_forcing->air_pressure_Pa/(moist_air_gas_constant_J_per_kg_K*
-                              (et_forcing->air_temperature_C+TK)); // rho_a
+  moist_air_density_kg_per_m3=model->et_forcing.air_pressure_Pa/(moist_air_gas_constant_J_per_kg_K*
+                              (model->et_forcing.air_temperature_C+TK)); // rho_a
 
   // DELTA
-  slope_sat_vap_press_curve_Pa_s=calc_slope_of_air_saturation_vapor_pressure_Pa_per_C(et_forcing->air_temperature_C); 
+  slope_sat_vap_press_curve_Pa_s=calc_slope_of_air_saturation_vapor_pressure_Pa_per_C(model->et_forcing.air_temperature_C); 
   delta=slope_sat_vap_press_curve_Pa_s;
 
   // gamma
-  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*et_forcing->water_temperature_C;  // eqn 2.7.6 Chow etal.
+  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*model->et_forcing.water_temperature_C;  // eqn 2.7.6 Chow etal.
                                                                                               // aka 'lambda'
-  psychrometric_constant_Pa_per_C=CP*et_forcing->air_pressure_Pa*
-                                  et_params->heat_transfer_roughness_length_m/
+  psychrometric_constant_Pa_per_C=CP*model->et_forcing.air_pressure_Pa*
+                                  model->et_params.heat_transfer_roughness_length_m/
                                   (0.622*water_latent_heat_of_vaporization_J_per_kg);
   gamma=psychrometric_constant_Pa_per_C;
 
