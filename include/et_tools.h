@@ -9,38 +9,13 @@
 #define TK  273.15     //  temperature in Kelvin at zero degree Celcius
 #define SB  5.67e-08   //  stefan_boltzmann_constant in units of W/m^2/K^4
 
-double calculate_net_radiation_W_per_sq_m
-(
-  struct evapotranspiration_options *opts,   // needed to tell if using aorc forcing values. Could be other options too.
-  struct surface_radiation_params   *pars,
-  struct surface_radiation_forcing  *forc
-);
+double calculate_net_radiation_W_per_sq_m(et_model *model);
 
-double calculate_aerodynamic_resistance
-(
-  double wind_speed_measurement_height_m,      // default =2.0 [m] 
-  double humidity_measurement_height_m,        // default =2.0 [m],
-  double zero_plane_displacement_height_m,     // depends on surface roughness [m],
-  double momentum_transfer_roughness_length_m, // [m],
-  double heat_transfer_roughness_length_m,     // [m],
-  double wind_speed_m_per_s                    // [m s-1].
-);
+double calculate_aerodynamic_resistance(et_model *model);
 
-void calculate_solar_radiation
-(
-  struct solar_radiation_options *options,
-  struct solar_radiation_parameters *params,
-  struct solar_radiation_forcing *forcing,
-  struct solar_radiation_results *results
-);
+void calculate_solar_radiation(et_model *model);
 
-void calculate_intermediate_variables
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing,
-  struct intermediate_vars *inter_vars
-);
+void calculate_intermediate_variables(et_model *model);
 
 int is_fabs_less_than_eps(double a,double epsilon);  // returns TRUE iff fabs(a)<epsilon
 
@@ -58,12 +33,7 @@ double calc_liquid_water_density_kg_per_m3(double water_temperature_C);
 // Hydrologic Science, Addison Wesley, 1990.                  *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double calculate_net_radiation_W_per_sq_m 
-(
-  struct evapotranspiration_options *et_options,   //  et_options.yes_aorc == TRUE if we are using aorc forcing values.
-  struct surface_radiation_params *surf_rad_params,
-  struct surface_radiation_forcing *surf_rad_forcing
-)
+double calculate_net_radiation_W_per_sq_m(et_model *model);
 
 {
   // local variables 
@@ -79,11 +49,11 @@ double calculate_net_radiation_W_per_sq_m
   double N,Klw;
   
   // CALCULATE OUTGOING LONGWAVE RADIATION FLUX FROM SURFACE
-  outgoing_longwave_radiation_W_per_sq_m=surf_rad_params->surface_longwave_emissivity*stefan_boltzmann_constant*
-                                         pow(surf_rad_forcing->surface_skin_temperature_C+TK,4.0); 
+  outgoing_longwave_radiation_W_per_sq_m=model->surf_rad_params.surface_longwave_emissivity*stefan_boltzmann_constant*
+                                         pow(model->surf_rad_forcing.surface_skin_temperature_C+TK,4.0); 
                                          // must convert C to K
 
-  if(0.999 < surf_rad_params->surface_longwave_emissivity) 
+  if(0.999 < model->surf_rad_params.surface_longwave_emissivity) 
   {
     surface_longwave_albedo=0.0;    // soil, rock, concrete, asphalt, vegetation, snow
   }
@@ -92,22 +62,22 @@ double calculate_net_radiation_W_per_sq_m
     surface_longwave_albedo=0.03;   // water - actually not this simple, but close enough for now
   }
   
-  if(et_options->yes_aorc==FALSE)  // we must calculate longwave incoming from the atmosphere 
-    saturation_water_vapor_partial_pressure_Pa=calc_air_saturation_vapor_pressure_Pa(surf_rad_forcing->air_temperature_C); 
+  if(model->et_options.yes_aorc==FALSE)  // we must calculate longwave incoming from the atmosphere 
+    saturation_water_vapor_partial_pressure_Pa=calc_air_saturation_vapor_pressure_Pa(model->surf_rad_forcing.air_temperature_C); 
 
-  actual_water_vapor_partial_pressure_Pa=surf_rad_forcing->relative_humidity_percent/100.0*
+  actual_water_vapor_partial_pressure_Pa=model->surf_rad_forcing.relative_humidity_percent/100.0*
                                          saturation_water_vapor_partial_pressure_Pa;
 
-  if(et_options->yes_aorc==FALSE)
+  if(model->et_options.yes_aorc==FALSE)
   {
     // CALCULATE DOWNWELLING LONGWAVE RADIATION FLUX FROM ATMOSPHERE, W/m2.
-    if(0.90 < surf_rad_forcing->cloud_cover_fraction) // very nearly overcast or overcast
+    if(0.90 < model->surf_rad_forcing.cloud_cover_fraction) // very nearly overcast or overcast
     {
       // calculate longwave downwelling using overcast equation, with emissivity of cloud base =1.0
-      cloud_base_temperature_C=surf_rad_forcing->air_temperature_C+
-                               surf_rad_forcing->ambient_temperature_lapse_rate_deg_C_per_km*
-                               surf_rad_forcing->cloud_base_height_m/1000.0;
-      surf_rad_forcing->incoming_longwave_radiation_W_per_sq_m=stefan_boltzmann_constant*
+      cloud_base_temperature_C=model->surf_rad_forcing.air_temperature_C+
+                               model->surf_rad_forcing.ambient_temperature_lapse_rate_deg_C_per_km*
+                               model->surf_rad_forcing.cloud_base_height_m/1000.0;
+      model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m=stefan_boltzmann_constant*
                                               pow(cloud_base_temperature_C+TK,4.0);
     }
   else  // not overcast, use TVA (1972) formulation, taken from Bras R.L., textbook, pg. 44.
@@ -115,18 +85,18 @@ double calculate_net_radiation_W_per_sq_m
       // use cloudy skies formulation
       // clear sky emissivity
       atmosphere_longwave_emissivity = 0.740 + 0.0049*actual_water_vapor_partial_pressure_Pa/100.0; //conv. Pa to mb
-      N=surf_rad_forcing->cloud_cover_fraction;
+      N=model->surf_rad_forcing.cloud_cover_fraction;
       Klw=(1.0+0.17*N*N);  // effect of cloud cover from TVA (1972)
-      surf_rad_forcing->incoming_longwave_radiation_W_per_sq_m=atmosphere_longwave_emissivity*Klw*
+      model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m=atmosphere_longwave_emissivity*Klw*
                                              stefan_boltzmann_constant*
-                                             pow(surf_rad_forcing->air_temperature_C+TK,4.0);
+                                             pow(model->surf_rad_forcing.air_temperature_C+TK,4.0);
     }
   }
 
-  net_radiation_W_per_sq_m=(1.0-surf_rad_params->surface_shortwave_albedo)*
-                            surf_rad_forcing->incoming_shortwave_radiation_W_per_sq_m +
+  net_radiation_W_per_sq_m=(1.0-model->surf_rad_params.surface_shortwave_albedo)*
+                            model->surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m +
                            (1.0-surface_longwave_albedo)*
-                           surf_rad_forcing->incoming_longwave_radiation_W_per_sq_m -
+                           model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m -
                            outgoing_longwave_radiation_W_per_sq_m;   // this is plus, negative grnd ht flx is downward 
 
   return(net_radiation_W_per_sq_m);
@@ -140,17 +110,15 @@ double calculate_net_radiation_W_per_sq_m
 // Reference: http://www.fao.org/3/X0490E/x0490e06.htm        *
 // F.L. Ogden, NOAA National Weather Service, 2020            *
 //############################################################*
-double calculate_aerodynamic_resistance
-(
-  double wind_speed_measurement_height_m,      // default =2.0 [m] 
-  double humidity_measurement_height_m,        // default =2.0 [m],
-  double zero_plane_displacement_height_m,     // depends on surface roughness [m],
-  double momentum_transfer_roughness_length_m, // [m],
-  double heat_transfer_roughness_length_m,     // [m],
-  double wind_speed_m_per_s                    // [m s-1].
-)
+double calculate_aerodynamic_resistance(et_model *model);
 {
   // define local variables to ease computations:
+  double wind_speed_measurement_height_m = model->et_forcing.wind_speed_measurement_height_m;
+  double humidity_measurement_height_m = model->et_forcing.humidity_measurement_height_m; // default =2.0 [m],
+  double zero_plane_displacement_height_m = model->et_forcing.zero_plane_displacement_height_m;// depends on surface roughness [m],
+  double momentum_transfer_roughness_length_m = model->et_forcing.momentum_transfer_roughness_length_m; // [m],
+  double heat_transfer_roughness_length_m = model->et_forcing.heat_transfer_roughness_length_m;     // [m],
+  double wind_speed_m_per_s = model->et_forcing.wind_speed_m_per_s;                    // [m s-1].
 
   double ra,zm,zh,d,zom,zoh,k,uz;
   double von_karman_constant_squared=KV2;  // this is dimensionless universal constant [-], K=0.41, squared.
@@ -247,8 +215,7 @@ double calc_liquid_water_density_kg_per_m3(double water_temperature_C)
 // F.L. Ogden, 2009, NOAA National Weather Service, 2020      /
 //############################################################/
 
-void calculate_solar_radiation(struct solar_radiation_options *options, struct solar_radiation_parameters *params, 
-                  struct solar_radiation_forcing *forcing, struct solar_radiation_results *results)
+void calculate_solar_radiation(et_model* model)
 {
   double delta,r,equation_of_time_minutes,M,phi;
   double sinalpha,tau,alpha,cosalpha,azimuth;
@@ -257,7 +224,7 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
 
   // constants 
   double solar_constant_W_per_sq_m; 
-
+ 
 
   double solar_declination_angle_degrees;
   double solar_declination_angle_radians;
@@ -270,12 +237,15 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
   double zulu_time_h;
   double optical_air_mass;
 
+  int et_doy = model->forcing.day_of_year;
+  int et_zulu_time = model->forcing.zulu_time_h;
+
   solar_constant_W_per_sq_m = 1361.6;     // Dudock de Wit et al. 2017 GRL, approx. avg. value
 
-  solar_declination_angle_degrees=23.45*M_PI/180.0*cos(2.0*M_PI/365.0*(172.0-forcing->day_of_year));
+  solar_declination_angle_degrees=23.45*M_PI/180.0*cos(2.0*M_PI/365.0*(172.0-et_doy));
   solar_declination_angle_radians=solar_declination_angle_degrees*M_PI/180.0;
 
-  earth_sun_distance_ratio=1.0+0.017*cos(2.0*M_PI/365*(186.0-forcing->day_of_year));
+  earth_sun_distance_ratio=1.0+0.017*cos(2.0*M_PI/365*(186.0-et_doy));
 
   // calculate the local hour angle using a unit circle centered on the observer, with Obs. at x=1, y=0.
   //      Note: G=Greenwich, A=180E=180W==antipode, O=obs., S=sun.
@@ -304,15 +274,15 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
   //
 
   // this is the "equation of time" that accounts for the analemma effect 
-  M=2.0*M_PI*forcing->day_of_year/365.242;     // mean anomaly of sun  from wikipedia, works for leap years 
+  M=2.0*M_PI*et_doy/365.242;     // mean anomaly of sun  from wikipedia, works for leap years 
   equation_of_time_minutes=-7.655*sin(M)+9.873*sin(2.0*M+3.588);    // an approximation of the equation of time, minutes 
-  zulu_time_h=forcing->zulu_time_h-equation_of_time_minutes/1440.0; // adjust the position of the sun for analemma effect
+  zulu_time_h=et_zulu_time - equation_of_time_minutes/1440.0; // adjust the position of the sun for analemma effect
 
   // here I use the antipode as the time origin, because that is where the sun is overhead at 00:00Z
   antipodal_hour_angle_degrees    =            zulu_time_h*15.0; // see note on above figure
 
   // here I convert longitude of the observer to the same coordinate system to eliminate the problem of +-180 deg. long.
-  antipodal_obs_longitude_degrees =            180.0-params->longitude_degrees;
+  antipodal_obs_longitude_degrees =            180.0 - model->et_params.longitude_degrees;
 
   // here I convert these angles to points on a unit circle using the above coordinate system to go to a purely 
   // geometric representation.  This helps deal with problems related to +-180 deg.
@@ -331,7 +301,7 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
   // USE SIMPLER VARIABLE NAMES FOR THESE DENSE CALCULATIONS
   tau=local_hour_angle_radians;                    // local hour angle, radians
   delta=solar_declination_angle_radians;           // solar declination angle, radians
-  phi=params->latitude_degrees*M_PI/180.0;         // latitude, radians
+  phi=model->et_params.latitude_degrees*M_PI/180.0;         // latitude, radians
 
   // calculate solar elevation angle, sin(alpha) 
 
@@ -346,11 +316,11 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
     azimuth=2.0*M_PI-azimuth; 
   }
 
-  results->solar_elevation_angle_degrees=alpha*180.0/M_PI;      // convert to degrees 
+  model->solar_results.solar_elevation_angle_degrees=alpha*180.0/M_PI;      // convert to degrees 
 
-  results->solar_azimuth_angle_degrees=azimuth*180.0/M_PI;      // convert to degrees  
+  model->solar_results.solar_azimuth_angle_degrees=azimuth*180.0/M_PI;      // convert to degrees  
 
-  results->solar_local_hour_angle_degrees=tau*180.0/M_PI;       // convert to degrees 
+  model->results.solar_local_hour_angle_degrees=tau*180.0/M_PI;       // convert to degrees 
 
   if(alpha>0.0)  // the sun is over the horizon 
   { 
@@ -362,31 +332,31 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
                      (pow(sinalpha,3.0)+0.149864*pow(sinalpha,2.0)+0.0102963*sinalpha+0.000303978);
                   
     // the following comes from Ineichen and Perez, 2002 
-    fh1=exp(-1.0*params->site_elevation_m/8000.0);  // elev. in meters, effect of atmos. thickness on air mass
+    fh1=exp(-1.0*model->et_params.site_elevation_m/8000.0);  // elev. in meters, effect of atmos. thickness on air mass
     b=0.664+0.163/fh1;
   
     // note, atm_turbidity is equal to Tlk in Ineichen and Perez, 2002.
-    Ic=b*Io*exp(-0.09*optical_air_mass*(forcing->atmospheric_turbidity_factor-1.0));  // clear sky radiation
+    Ic=b*Io*exp(-0.09*optical_air_mass*(model->et_forcing.atmospheric_turbidity_factor-1.0));  // clear sky radiation
 
     // adjust for cloudiness effects using procedure from Bras' Hydrology text
-    if(options->cloud_base_height_known==TRUE) 
+    if(model->options.cloud_base_height_known==TRUE) 
     {
       // percent of cloudless insolation, z= cloud base elev km.
-      kshort=0.18+0.0853*forcing->cloud_base_height_m/1000.0;   // convert cloud base height to km for this calc.                                   
-      Ips=Ic*(1.0-(1.0-kshort)*forcing->cloud_cover_fraction);   // insolation considering clouds, Eagleson, 1970.
+      kshort=0.18+0.0853*model->et_forcing.cloud_base_height_m/1000.0;   // convert cloud base height to km for this calc.                                   
+      Ips=Ic*(1.0-(1.0-kshort)*model->et_forcing.cloud_cover_fraction);   // insolation considering clouds, Eagleson, 1970.
     }
     else
     {
       // cloud base elevation not known.
-      kshort=0.65*forcing->cloud_cover_fraction*forcing->cloud_cover_fraction;  // (TVA, 1972)
+      kshort=0.65*model->et_forcing.cloud_cover_fraction*model->et_forcing.cloud_cover_fraction;  // (TVA, 1972)
       Ips=Ic*(1.0-kshort);
     }
 
     // all these results are calculated near the land surface, but above the canopy or snow pack.
-    results->solar_radiation_flux_W_per_sq_m= Ic;   // no clouds. This is on a plane perpendicular to earth-sun line.
-    results->solar_radiation_horizontal_flux_W_per_sq_m=Ic*sinalpha; // this is on a horizontal plane
-    results->solar_radiation_cloudy_flux_W_per_sq_m=Ips; // Considers clouds, on a plane perpendicular to earth-sun line
-    results->solar_radiation_horizontal_cloudy_flux_W_per_sq_m=Ips*sinalpha;  // on a horizontal plane tangent to earth
+    model->solar_results.solar_radiation_flux_W_per_sq_m= Ic;   // no clouds. This is on a plane perpendicular to earth-sun line.
+    model->solar_results.solar_radiation_horizontal_flux_W_per_sq_m=Ic*sinalpha; // this is on a horizontal plane
+    model->solar_results.solar_radiation_cloudy_flux_W_per_sq_m=Ips; // Considers clouds, on a plane perpendicular to earth-sun line
+    model->solar_results.solar_radiation_horizontal_cloudy_flux_W_per_sq_m=Ips*sinalpha;  // on a horizontal plane tangent to earth
   
     // I comment this out because it is more appripriate in a vegetation effect routine  
     // Ipsg=Kt*Ips;
@@ -399,13 +369,7 @@ void calculate_solar_radiation(struct solar_radiation_options *options, struct s
 }
 
 // Function to calculate hydrological variables needed for evapotranspiration calculation
-void calculate_intermediate_variables
-(
-  struct evapotranspiration_options *et_options,
-  struct evapotranspiration_params *et_params,
-  struct evapotranspiration_forcing *et_forcing,
-  struct intermediate_vars *inter_vars
-)
+void calculate_intermediate_variables(et_model* model)
 {
   // local variables
   double aerodynamic_resistance_sec_per_m;         //  value [s per m], computed in: calculate_aerodynamic_resistance()
@@ -425,47 +389,47 @@ void calculate_intermediate_variables
   double gamma;
 
   // IF SOIL WATER TEMPERATURE NOT PROVIDED, USE A SANE VALUE
-  if(100.0 > et_forcing->water_temperature_C) et_forcing->water_temperature_C=22.0; // growing season
+  if(100.0 > model->et_forcing.water_temperature_C) model->et_forcing.water_temperature_C=22.0; // growing season
 
   // CALCULATE VARS NEEDED FOR THE ALL METHODS:
 
-  liquid_water_density_kg_per_m3 = calc_liquid_water_density_kg_per_m3(et_forcing->water_temperature_C); // rho_w
+  liquid_water_density_kg_per_m3 = calc_liquid_water_density_kg_per_m3(model->et_forcing.water_temperature_C); // rho_w
 
-  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*et_forcing->water_temperature_C;  // eqn 2.7.6 Chow etal.
+  water_latent_heat_of_vaporization_J_per_kg=2.501e+06-2370.0*model->et_forcing.water_temperature_C;  // eqn 2.7.6 Chow etal.
                                                                                               // aka 'lambda'
   // all methods other than radiation balance method involve at least some of the aerodynamic method calculations
 
   // IF HEAT/MOMENTUM ROUGHNESS LENGTHS NOT GIVEN, USE DEFAULTS SO THAT THEIR RATIO IS EQUAL TO 1.
-  if((1.0e-06> et_params->heat_transfer_roughness_length_m) ||
-   (1.0e-06> et_params->momentum_transfer_roughness_length_m))   // zero should be passed down if these are unknown
+  if((1.0e-06> model->et_params.heat_transfer_roughness_length_m) ||
+   (1.0e-06> model->et_params.momentum_transfer_roughness_length_m))   // zero should be passed down if these are unknown
   {
-    et_params->heat_transfer_roughness_length_m     =1.0;     // decent default values, and the ratio of these is 1.0
-    et_params->momentum_transfer_roughness_length_m =1.0;
+    model->et_params.heat_transfer_roughness_length_m     =1.0;     // decent default values, and the ratio of these is 1.0
+    model->et_params.momentum_transfer_roughness_length_m =1.0;
   }
 
   // e_sat is needed for all aerodynamic and Penman-Monteith methods
 
-  air_saturation_vapor_pressure_Pa=calc_air_saturation_vapor_pressure_Pa(et_forcing->air_temperature_C);
+  air_saturation_vapor_pressure_Pa=calc_air_saturation_vapor_pressure_Pa(model->et_forcing.air_temperature_C);
 
-  if( (0.0 < et_forcing->relative_humidity_percent) && (100.0 >= et_forcing->relative_humidity_percent) )
+  if( (0.0 < model->et_forcing.relative_humidity_percent) && (100.0 >= model->et_forcing.relative_humidity_percent))
   {
     // meaningful relative humidity value provided
-    air_actual_vapor_pressure_Pa=et_forcing->relative_humidity_percent/100.0 * air_saturation_vapor_pressure_Pa;
+    air_actual_vapor_pressure_Pa=model->et_forcing.relative_humidity_percent/100.0 * air_saturation_vapor_pressure_Pa;
   
     // calculate specific humidity, q_v
-    et_forcing->specific_humidity_2m_kg_per_kg=0.622*air_actual_vapor_pressure_Pa/et_forcing->air_pressure_Pa;
+    model->et_forcing.specific_humidity_2m_kg_per_kg=0.622*air_actual_vapor_pressure_Pa/model->et_forcing.air_pressure_Pa;
   }
   else
   {
     // if here, we must be using AORC forcing that provides specific humidity instead of relative humidity
-    air_actual_vapor_pressure_Pa=et_forcing->specific_humidity_2m_kg_per_kg*et_forcing->air_pressure_Pa/0.622;
+    air_actual_vapor_pressure_Pa=model->et_forcing.specific_humidity_2m_kg_per_kg*model->et_forcing.air_pressure_Pa/0.622;
     if(air_actual_vapor_pressure_Pa > air_saturation_vapor_pressure_Pa)
     {
     // this is bad.   Actual vapor pressure of air should not be higher than saturated value.
     // warn and reset to something meaningful
     fprintf(stderr,"Invalid value of specific humidity with no supplied rel. humidity in ET calc. function:\n");
-    fprintf(stderr,"Relative Humidity: %lf percent\n",et_forcing->relative_humidity_percent);
-    fprintf(stderr,"Specific Humidity: %lf kg/kg\n",et_forcing->specific_humidity_2m_kg_per_kg);
+    fprintf(stderr,"Relative Humidity: %lf percent\n",model->et_forcing.relative_humidity_percent);
+    fprintf(stderr,"Specific Humidity: %lf kg/kg\n",model->et_forcing.specific_humidity_2m_kg_per_kg);
     air_actual_vapor_pressure_Pa=0.65*air_saturation_vapor_pressure_Pa;
     }
   }
@@ -490,16 +454,16 @@ void calculate_intermediate_variables
                                   (0.622*water_latent_heat_of_vaporization_J_per_kg);
   gamma=psychrometric_constant_Pa_per_C;
 
-  inter_vars->liquid_water_density_kg_per_m3=liquid_water_density_kg_per_m3;
-  inter_vars->water_latent_heat_of_vaporization_J_per_kg=water_latent_heat_of_vaporization_J_per_kg;
-  inter_vars->air_saturation_vapor_pressure_Pa=air_saturation_vapor_pressure_Pa;
-  inter_vars->air_actual_vapor_pressure_Pa=air_actual_vapor_pressure_Pa;
-  inter_vars->vapor_pressure_deficit_Pa=vapor_pressure_deficit_Pa;
-  inter_vars->moist_air_gas_constant_J_per_kg_K=moist_air_gas_constant_J_per_kg_K;
-  inter_vars->moist_air_density_kg_per_m3=moist_air_density_kg_per_m3;
-  inter_vars->slope_sat_vap_press_curve_Pa_s=slope_sat_vap_press_curve_Pa_s;
-  inter_vars->water_latent_heat_of_vaporization_J_per_kg=inter_vars->water_latent_heat_of_vaporization_J_per_kg;
-  inter_vars->psychrometric_constant_Pa_per_C=psychrometric_constant_Pa_per_C;
+  model->inter_vars.liquid_water_density_kg_per_m3=liquid_water_density_kg_per_m3;
+  model->inter_vars.water_latent_heat_of_vaporization_J_per_kg=water_latent_heat_of_vaporization_J_per_kg;
+  model->inter_vars.air_saturation_vapor_pressure_Pa=air_saturation_vapor_pressure_Pa;
+  model->inter_vars.air_actual_vapor_pressure_Pa=air_actual_vapor_pressure_Pa;
+  model->inter_vars.vapor_pressure_deficit_Pa=vapor_pressure_deficit_Pa;
+  model->inter_vars.moist_air_gas_constant_J_per_kg_K=moist_air_gas_constant_J_per_kg_K;
+  model->inter_vars.moist_air_density_kg_per_m3=moist_air_density_kg_per_m3;
+  model->inter_vars.slope_sat_vap_press_curve_Pa_s=slope_sat_vap_press_curve_Pa_s;
+  model->inter_vars.water_latent_heat_of_vaporization_J_per_kg=model->inter_vars.water_latent_heat_of_vaporization_J_per_kg;
+  model->inter_vars.psychrometric_constant_Pa_per_C=psychrometric_constant_Pa_per_C;
 }
 
 int is_fabs_less_than_eps(double a,double epsilon)  // returns true if fabs(a)<epsilon

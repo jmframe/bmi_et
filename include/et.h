@@ -228,7 +228,6 @@ struct et_model{
   int yes_aorc; // if TRUE then using AORC forcing data- if FALSE then we must calculate incoming short/longwave rad.
   int yes_wrf;  // if TRUE then we get radiation winds etc. from WRF output.  TODO not implemented.
 
-  struct evapotranspiration_options set_et_options;
   double et_m_per_s;
 
   struct aorc_forcing_data aorc;
@@ -256,14 +255,6 @@ extern void free_et_model(et_model *model);
 
 extern int run(et_model* model);
 
-void et_setup(struct aorc_forcing_data*          aorc,
-              struct solar_radiation_options*    solar_options,
-              struct solar_radiation_parameters* solar_params,
-              struct solar_radiation_forcing*    solar_forcing,
-              struct evapotranspiration_options* set_et_options,
-              struct evapotranspiration_params*  et_params,
-              struct evapotranspiration_forcing* et_forcing,
-              struct surface_radiation_params*   surf_rad_params,
-              struct surface_radiation_forcing*  surf_rad_forcing);
+void et_setup(et_model* model);
 
 #endif
