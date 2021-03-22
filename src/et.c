@@ -15,11 +15,15 @@
 #include "../include/EtPriestleyTaylorMethod.h"
 #include "../include/EtPenmanMonteithMethod.h"
 
-int main()
-{
+int main(int argc, char *argv[]){
+  if(argc<=1){
+    printf("make sure to include an ET Type between 1 - 5");
+    exit(1);
+  }
+  int et_method_int = atoi(argv[1]);
   et_model *model;
   model = (et_model *) malloc(sizeof(et_model));
-  et_setup(model);
+  et_setup(model, et_method_int);
   run(model);
   return 0;
 }
@@ -111,9 +115,8 @@ extern int run(et_model* model)
   return 0;
 }
 
-void et_setup(et_model* model)
+void et_setup(et_model* model, int et_method_option)
 {
-  int et_method_option = 1;
   double saturation_vapor_pressure_Pa;
   double actual_vapor_pressure_Pa;
 

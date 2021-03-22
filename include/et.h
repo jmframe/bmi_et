@@ -247,6 +247,6 @@ extern void free_et_model(et_model *model);
 
 extern int run(et_model* model);
 
-void et_setup(et_model* model);
+void et_setup(et_model* model, int et_method_int);
 
 #endif
