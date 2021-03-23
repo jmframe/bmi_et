@@ -1,13 +1,12 @@
-#ifndef ET_BMI_ET_H
-#define ET_BMI_ET_H
+#ifndef BMI_ET_H
+#define BMI_ET_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "bmi.h"
-
-int et_method_int;
+#include "et.h"
 
 Bmi* register_bmi_et(Bmi *model);
 

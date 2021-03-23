@@ -1,5 +1,5 @@
-#ifndef ET_CALC_PPROPERTY_H
-#define ET_CALC_PPROPERTY_H
+#ifndef ET_TOOLS_H
+#define ET_TOOLS_H
 
 #define TRUE  1
 #define FALSE 0

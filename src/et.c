@@ -1,5 +1,5 @@
-#ifndef ET_FUNCTION_C
-#define ET_FUNCTION_C
+#ifndef ET_C
+#define ET_C
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,18 +15,22 @@
 #include "../include/EtPriestleyTaylorMethod.h"
 #include "../include/EtPenmanMonteithMethod.h"
 
-//int main(int argc, char *argv[]){
-//  if(argc<=1){
-//    printf("make sure to include an ET Type between 1 - 5\n");
-//    exit(1);
-//  }
-//  int et_method_int = atoi(argv[1]);
-//  et_model *model;
-//  model = (et_model *) malloc(sizeof(et_model));
-//  et_setup(model, et_method_int);
-//  run(model);
-//  return 0;
-//}
+/*  // This is the main function if not using BMI
+    // ------------------------------------------
+    // ------------------------------------------
+int main(int argc, char *argv[]){
+  if(argc<=1){
+    printf("make sure to include an ET Type between 1 - 5\n");
+    exit(1);
+  }
+  int et_method_int = atoi(argv[1]);
+  et_model *model;
+  model = (et_model *) malloc(sizeof(et_model));
+  et_setup(model, et_method_int);
+  run(model);
+  return 0;
+}
+*/
 
 extern void alloc_et_model(et_model *model) {
     // TODO: *******************
@@ -37,6 +41,7 @@ extern void free_et_model(et_model *model) {
 }
 
 extern int run(et_model* model)
+
 {
   if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
   if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
@@ -56,8 +61,8 @@ extern int run(et_model* model)
   if(model->et_options.yes_aorc==TRUE)
   {
     // wind speed was measured at 10.0 m height, so we need to calculate the wind speed at 2.0m
-    numerator=log(2.0/model->et_params.zero_plane_displacement_height_m);
-    denominator=log(model->et_params.wind_speed_measurement_height_m/model->et_params.zero_plane_displacement_height_m);
+    double numerator=log(2.0/model->et_params.zero_plane_displacement_height_m);
+    double denominator=log(model->et_params.wind_speed_measurement_height_m/model->et_params.zero_plane_displacement_height_m);
     model->et_forcing.wind_speed_m_per_s = model->et_forcing.wind_speed_m_per_s*numerator/denominator;  // this is the 2 m value
     model->et_params.wind_speed_measurement_height_m=2.0;  // change because we converted from 10m to 2m height.
   }
@@ -69,8 +74,8 @@ extern int run(et_model* model)
     model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m  = (double)model->aorc.incoming_longwave_W_per_m2; 
     model->surf_rad_forcing.air_temperature_C                       = (double)model->aorc.air_temperature_2m_K-TK;
     // compute relative humidity from specific humidity..
-    saturation_vapor_pressure_Pa = calc_air_saturation_vapor_pressure_Pa(model->surf_rad_forcing.air_temperature_C);
-    actual_vapor_pressure_Pa = (double)model->aorc.specific_humidity_2m_kg_per_kg*(double)model->aorc.surface_pressure_Pa/0.622;
+    double saturation_vapor_pressure_Pa = calc_air_saturation_vapor_pressure_Pa(model->surf_rad_forcing.air_temperature_C);
+    double actual_vapor_pressure_Pa = (double)model->aorc.specific_humidity_2m_kg_per_kg*(double)model->aorc.surface_pressure_Pa/0.622;
     model->surf_rad_forcing.relative_humidity_percent = 100.0*actual_vapor_pressure_Pa/saturation_vapor_pressure_Pa;
     // sanity check the resulting value.  Should be less than 100%.  Sometimes air can be supersaturated.
     if(100.0< model->surf_rad_forcing.relative_humidity_percent) model->surf_rad_forcing.relative_humidity_percent = 99.0;
@@ -123,7 +128,7 @@ void et_setup(et_model* model, int et_method_option)
   //###################################################################################################
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.  CYCLE THROUGH THESE FOR THE UNIT TEST.
   //###################################################################################################
-  model->et_method_int = et_method_int;
+  model->et_method = et_method_option;
   model->et_options.use_energy_balance_method   = FALSE;
   model->et_options.use_aerodynamic_method      = FALSE;
   model->et_options.use_combination_method      = FALSE;
@@ -251,4 +256,4 @@ void et_setup(et_model* model, int et_method_option)
   return;
 }
 
-#endif  // ET_FUNCTION_C
+#endif  // ET_C

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/bmi.h"
 #include "../include/et.h"
+#include "../include/bmi.h"
 #include "../include/bmi_et.h"
 
 #define INPUT_VAR_NAME_COUNT 5 // 
@@ -19,7 +19,8 @@ main(int argc, const char *argv[])
 
   register_bmi_et(model);
 
-  et_method_int = 1*atoi(argv[1]);
+  int et_method_int = 1*atoi(argv[1]);
+  
   model->initialize(model);
   
   et_setup(model->data, 1);

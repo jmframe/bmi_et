@@ -1,3 +1,3 @@
 #!/bin/bash
-gcc -o run ./src/et.c ./src/bmi_et.c
+gcc ./src/et.c ./src/bmi_et.c -o run
 ./run 1

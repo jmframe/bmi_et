@@ -1,5 +1,5 @@
-#ifndef Et_main_H
-#define Et_main_H
+#ifndef ET_H
+#define ET_H
 
 #include <stdio.h>
 #include <math.h>
@@ -76,12 +76,6 @@
 // the momentum roughness height "zom" can be estimated as 0.123*H.
 // the heat transfer roughness height "zoh" can be approximated as 0.1 * zom.
 //-----------------------------------------------------------------------------------------------------------------
-
-
-double numerator;
-double denominator;
-double saturation_vapor_pressure_Pa;
-double actual_vapor_pressure_Pa;
 
 //DATA STRUCTURE TO HOLD AORC FORCING DATA
 struct aorc_forcing_data
@@ -226,7 +220,7 @@ struct et_model{
   // FLAGS
   int yes_aorc; // if TRUE then using AORC forcing data- if FALSE then we must calculate incoming short/longwave rad.
   int yes_wrf;  // if TRUE then we get radiation winds etc. from WRF output.  TODO not implemented.
-  int et_method_int;
+  int et_method;
   double et_m_per_s;
 
   struct aorc_forcing_data aorc;
@@ -254,6 +248,6 @@ extern void free_et_model(et_model *model);
 
 extern int run(et_model* model);
 
-void et_setup(et_model* model, int et_method_int);
+void et_setup(et_model* model, int et_method_option);
 
 #endif
