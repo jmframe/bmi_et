@@ -23,7 +23,7 @@ main(int argc, const char *argv[])
   
   model->initialize(model);
   
-  et_setup(model->data, 1);
+  et_setup(model->data, et_method_int);
 
   model->update(model);
   return 0;

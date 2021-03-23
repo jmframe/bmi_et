@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "functions_dot_h/Et_main.h"
+#include "Et_main.h"
 
 double main(int argc, char *argv[]) {
 
