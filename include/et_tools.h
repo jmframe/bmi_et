@@ -25,6 +25,7 @@ double calc_slope_of_air_saturation_vapor_pressure_Pa_per_C(double air_temperatu
 
 double calc_liquid_water_density_kg_per_m3(double water_temperature_C);
 
+int et_method_int;
 
 //############################################################*
 // subroutine to calculate net radiation from all components  *

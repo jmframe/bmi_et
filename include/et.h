@@ -215,13 +215,18 @@ struct intermediate_vars
   //double water_latent_heat_of_vaporization_J_per_kg;
   double psychrometric_constant_Pa_per_C;      // gamma
 };
+struct bmi
+{
+  int time_step_size;
+
+};
 
 struct et_model{
   
   // FLAGS
   int yes_aorc; // if TRUE then using AORC forcing data- if FALSE then we must calculate incoming short/longwave rad.
   int yes_wrf;  // if TRUE then we get radiation winds etc. from WRF output.  TODO not implemented.
-
+  int et_method_int;
   double et_m_per_s;
 
   struct aorc_forcing_data aorc;
@@ -237,6 +242,8 @@ struct et_model{
   struct solar_radiation_options    solar_options;
   struct solar_radiation_parameters solar_params;
   struct solar_radiation_results    solar_results;
+
+  struct bmi bmi;
 
 };
 typedef struct et_model et_model;

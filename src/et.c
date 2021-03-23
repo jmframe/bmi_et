@@ -15,18 +15,18 @@
 #include "../include/EtPriestleyTaylorMethod.h"
 #include "../include/EtPenmanMonteithMethod.h"
 
-int main(int argc, char *argv[]){
-  if(argc<=1){
-    printf("make sure to include an ET Type between 1 - 5");
-    exit(1);
-  }
-  int et_method_int = atoi(argv[1]);
-  et_model *model;
-  model = (et_model *) malloc(sizeof(et_model));
-  et_setup(model, et_method_int);
-  run(model);
-  return 0;
-}
+//int main(int argc, char *argv[]){
+//  if(argc<=1){
+//    printf("make sure to include an ET Type between 1 - 5\n");
+//    exit(1);
+//  }
+//  int et_method_int = atoi(argv[1]);
+//  et_model *model;
+//  model = (et_model *) malloc(sizeof(et_model));
+//  et_setup(model, et_method_int);
+//  run(model);
+//  return 0;
+//}
 
 extern void alloc_et_model(et_model *model) {
     // TODO: *******************
@@ -117,12 +117,13 @@ extern int run(et_model* model)
 
 void et_setup(et_model* model, int et_method_option)
 {
-  double saturation_vapor_pressure_Pa;
-  double actual_vapor_pressure_Pa;
+//  double saturation_vapor_pressure_Pa;
+//  double actual_vapor_pressure_Pa;
 
   //###################################################################################################
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.  CYCLE THROUGH THESE FOR THE UNIT TEST.
   //###################################################################################################
+  model->et_method_int = et_method_int;
   model->et_options.use_energy_balance_method   = FALSE;
   model->et_options.use_aerodynamic_method      = FALSE;
   model->et_options.use_combination_method      = FALSE;

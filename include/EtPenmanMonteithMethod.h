@@ -79,8 +79,8 @@ double penman_monteith_et_calculation
 
 {
   // local varibles
-  double numerator;
-  double denominator;
+  double pm_numerator;
+  double pm_denominator;
   double aerodynamic_resistance_s_per_m;
 
   // this method requires more calculations 
@@ -101,13 +101,13 @@ double penman_monteith_et_calculation
   // all the ingredients have been prepared.  Make Penman-Monteith soufle...
   // from: http://www.fao.org/3/X0490E/x0490e06.htm#aerodynamic%20resistance%20(ra)
 
-  numerator = delta* (model->et_forcing.net_radiation_W_per_sq_m - model->et_forcing.ground_heat_flux_W_per_sq_m) + 
+  pm_numerator = delta* (model->et_forcing.net_radiation_W_per_sq_m - model->et_forcing.ground_heat_flux_W_per_sq_m) + 
               moist_air_density_kg_per_m3 * CP *
               vapor_pressure_deficit_Pa/aerodynamic_resistance_s_per_m;
 
-  denominator = delta + gamma * (1.0+model->et_forcing.canopy_resistance_sec_per_m/aerodynamic_resistance_s_per_m);
+  pm_denominator = delta + gamma * (1.0+model->et_forcing.canopy_resistance_sec_per_m/aerodynamic_resistance_s_per_m);
           
-  return(numerator/denominator);  // Latent heat flux in Watts per sq. m., or J per (s m2)
+  return(pm_numerator/pm_denominator);  // Latent heat flux in Watts per sq. m., or J per (s m2)
 }
 
 #endif // ET_PENMAN_MONTEITH_METHOD_H
