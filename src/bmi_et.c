@@ -29,6 +29,9 @@ main(int argc, const char *argv[])
   et_setup(model->data, et_method_int);
 
   model->update(model);
+  
+  model->finalize(model);
+  
   return 0;
 }
 
