@@ -15,7 +15,7 @@ main(int argc, const char *argv[])
     printf("make sure to include an ET Type between 1 - 5\n");
     exit(1);
   }
-
+  
   Bmi *model = (Bmi *) malloc(sizeof(Bmi));
 
   register_bmi_et(model);
@@ -23,6 +23,8 @@ main(int argc, const char *argv[])
   int et_method_int = 1*atoi(argv[1]);
   
   model->initialize(model);
+  
+  read_init_config("/glade/work/jframe/bmi_et/bmi_et_config.txt", model->data);
   
   et_setup(model->data, et_method_int);
 
@@ -34,17 +36,16 @@ static int
 Initialize (Bmi *self)
 {
     et_model *et;
-
     et = (et_model *) self->data;
-
     return BMI_SUCCESS;
 }
 
 static int 
 Update (Bmi *self)
 {
-    run(((et_model *) self->data));
-    ((et_model *) self->data)->bmi.current_time_step += ((et_model *) self->data)->bmi.time_step_size;
+    et_model *et = (et_model *) self->data;
+    run(et);
+    et->bmi.current_time_step += et->bmi.time_step_size;
     return BMI_SUCCESS;
 }
 
@@ -192,6 +193,7 @@ static int count_delimited_values(char* string_val, char* delimiter)
 //---------------------------------------------------------------------------------------------------------------------
 int read_file_line_counts(const char* file_name, int* line_count, int* max_line_length)
 {
+    printf("--- counting lines in config file ---\n");
 
     *line_count = 0;
     *max_line_length = 0;
@@ -199,6 +201,7 @@ int read_file_line_counts(const char* file_name, int* line_count, int* max_line_
     FILE* fp = fopen(file_name, "r");
     // Ensure exists
     if (fp == NULL) {
+        printf("File does not exist.\n Failed in function read_file_line_counts\n");
         return -1;
     }
     int seen_non_whitespace = 0;
@@ -230,34 +233,44 @@ int read_file_line_counts(const char* file_name, int* line_count, int* max_line_
     // Before returning, increment the max line length by 1, since the \n will be on the line also.
     *max_line_length += 1;
 
+    printf("line_count: ", line_count);
+    printf(":\n");
+    printf("max_line_length: ", max_line_length);
+    printf(":\n");
+
     return 0;
 }  // end: read_file_line_counts
 
 //---------------------------------------------------------------------------------------------------------------------
-int read_init_config(const char* config_file, et_model* model,
-                     bool yes_aorc,
-                     bool yes_wrf,
-                     int* et_method_int,
-                     double* wind_speed_measurement_height_m,
-                     double* humidity_measurement_height_m,
-                     double* vegetation_height_m,
-                     double* zero_plane_displacement_height_m,
-                     double* momentum_transfer_roughness_length,
-                     double* heat_transfer_roughness_length_m,
-                     double* surface_longwave_emissivity,
-                     double* surface_shortwave_albedo,
-                     bool* cloud_base_height_known,
-                     double* latitude_degrees,
-                     double* longitude_degrees,
-                     double* site_elevation_m,
-                     int time_step_size,
-                     int num_timesteps)
+int read_init_config(const char* config_file, et_model* model)//,
+//                     bool yes_aorc,
+//                     bool yes_wrf,
+//                     int* et_method_int,
+//                     double* wind_speed_measurement_height_m,
+//                     double* humidity_measurement_height_m,
+//                     double* vegetation_height_m,
+//                     double* zero_plane_displacement_height_m,
+//                     double* momentum_transfer_roughness_length,
+//                     double* heat_transfer_roughness_length_m,
+//                     double* surface_longwave_emissivity,
+//                     double* surface_shortwave_albedo,
+//                     bool* cloud_base_height_known,
+//                     double* latitude_degrees,
+//                     double* longitude_degrees,
+//                     double* site_elevation_m,
+//                     int time_step_size,
+//                     int num_timesteps)
 {
     int config_line_count, max_config_line_length;
     // Note that this determines max line length including the ending return character, if present
     int count_result = read_file_line_counts(config_file, &config_line_count, &max_config_line_length);
+    printf("config_line_count ",config_line_count);
+    printf("\n");
+    printf("max_config_line_length ", max_config_line_length);
+    printf("\n");
     if (count_result == -1) {
         printf("Invalid config file '%s'", config_file);
+        printf("\n");
         return BMI_FAILURE;
     }
 
@@ -278,7 +291,60 @@ int read_init_config(const char* config_file, et_model* model,
     return BMI_SUCCESS;
 } // end: read_init_config
 
+static int Get_var_type (Bmi *self, const char *name, char * type)
+{
+    // Check to see if in output array first
+    for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, output_var_names[i]) == 0) {
+            strncpy(type, output_var_types[i], BMI_MAX_TYPE_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // Then check to see if in input array
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, input_var_names[i]) == 0) {
+            strncpy(type, input_var_types[i], BMI_MAX_TYPE_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // If we get here, it means the variable name wasn't recognized
+    type[0] = '\0';
+    return BMI_FAILURE;
+}
 
+static int Get_var_itemsize (Bmi *self, const char *name, int * size)
+{
+    char type[BMI_MAX_TYPE_NAME];
+    int type_result = Get_var_type(self, name, type);
+    if (type_result != BMI_SUCCESS) {
+        return BMI_FAILURE;
+    }
+
+    if (strcmp (type, "double") == 0) {
+        *size = sizeof(double);
+        return BMI_SUCCESS;
+    }
+    else if (strcmp (type, "float") == 0) {
+        *size = sizeof(float);
+        return BMI_SUCCESS;
+    }
+    else if (strcmp (type, "int") == 0) {
+        *size = sizeof(int);
+        return BMI_SUCCESS;
+    }
+    else if (strcmp (type, "short") == 0) {
+        *size = sizeof(short);
+        return BMI_SUCCESS;
+    }
+    else if (strcmp (type, "long") == 0) {
+        *size = sizeof(long);
+        return BMI_SUCCESS;
+    }
+    else {
+        *size = 0;
+        return BMI_FAILURE;
+    }
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------
@@ -291,6 +357,8 @@ register_bmi_et(Bmi *model)
         model->update = Update;
         model->finalize = Finalize;
         model->get_start_time = Get_start_time;
+        model->get_var_type = Get_var_type;
+        model->get_var_itemsize = Get_var_itemsize;
     }
 
     return model;

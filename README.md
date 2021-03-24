@@ -6,6 +6,7 @@
 * Penman Monteith method
 * Priestley Taylor method
 
+![code_flow](./figs/bmi_et.png)
 
 ##### evapotranspiration (ET) module, 
 ##### Version 1.0 by Fred L. Ogden, NOAA-NWS-OWP, May, 2020.

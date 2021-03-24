@@ -7,12 +7,9 @@ vegetation_height_m=0.12
 zero_plane_displacement_height_m=0.0003
 momentum_transfer_roughness_length=0.0
 heat_transfer_roughness_length_m=0.0
-#surf_rad_params
 surface_longwave_emissivity=1.0
 surface_shortwave_albedo=0.22
-#solar_options
 cloud_base_height_known=FALSE
-#solar_parms
 latitude_degrees=37.25
 longitude_degrees=-97.5554
 site_elevation_m=303.33
