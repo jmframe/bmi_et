@@ -15,23 +15,6 @@
 #include "../include/EtPriestleyTaylorMethod.h"
 #include "../include/EtPenmanMonteithMethod.h"
 
-/*  // This is the main function if not using BMI
-    // ------------------------------------------
-    // ------------------------------------------
-int main(int argc, char *argv[]){
-  if(argc<=1){
-    printf("make sure to include an ET Type between 1 - 5\n");
-    exit(1);
-  }
-  int et_method_int = atoi(argv[1]);
-  et_model *model;
-  model = (et_model *) malloc(sizeof(et_model));
-  et_setup(model, et_method_int);
-  run(model);
-  return 0;
-}
-*/
-
 extern void alloc_et_model(et_model *model) {
     // TODO: *******************
 }

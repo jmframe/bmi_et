@@ -212,6 +212,8 @@ struct intermediate_vars
 struct bmi
 {
   int time_step_size;
+  int num_timesteps;
+  int current_time_step;
 
 };
 
