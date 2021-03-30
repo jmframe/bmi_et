@@ -26,12 +26,6 @@ extern void free_et_model(et_model *model) {
 extern int run(et_model* model)
 
 {
-  if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
-  if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
-  if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
-  if(model->et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
-  if(model->et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
-  
   // populate the evapotranspiration forcing data structure:
   //---------------------------------------------------------------------------------------------------------------
   model->et_forcing.air_temperature_C             = (double)model->aorc.air_temperature_2m_K-TK;  // gotta convert it to C
@@ -105,12 +99,15 @@ extern int run(et_model* model)
 
 void et_setup(et_model* model, int et_method_option)
 {
-//  double saturation_vapor_pressure_Pa;
-//  double actual_vapor_pressure_Pa;
 
-  //###################################################################################################
-  // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.  CYCLE THROUGH THESE FOR THE UNIT TEST.
-  //###################################################################################################
+  //##########################################################
+  // TODO: ALL OPTIONS READ IN FROM CONFIGURATION FILE.
+  // TODO: READ IN FORCINGS FROM ASCII FILE.
+  //##########################################################
+
+  //##########################################################
+  // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.
+  //##########################################################
   model->et_method = et_method_option;
   model->et_options.use_energy_balance_method   = FALSE;
   model->et_options.use_aerodynamic_method      = FALSE;
@@ -218,6 +215,12 @@ void et_setup(et_model* model, int et_method_option)
     model->surf_rad_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
     model->surf_rad_forcing.zulu_time                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
 
+    if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
+    if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
+    if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
+    if(model->et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
+    if(model->et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
+  
     // UNIT TEST RESULTS
     // CALCULATED SOLAR FLUXES
     // at time:     20.56700000 UTC
