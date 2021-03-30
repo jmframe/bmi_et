@@ -21,13 +21,9 @@ main(int argc, const char *argv[])
   register_bmi_et(model);
 
   int et_method_int = 1*atoi(argv[1]);
+  const char *cfg_file = "/glade/work/jframe/bmi_et/bmi_et_config.txt";
+  model->initialize(model, et_method_int, cfg_file);
   
-  model->initialize(model);
-  
-  read_init_config("/glade/work/jframe/bmi_et/bmi_et_config.txt", model->data);
-  
-  et_setup(model->data, et_method_int);
-
   model->update(model);
   
   model->finalize(model);
@@ -36,10 +32,12 @@ main(int argc, const char *argv[])
 }
 
 static int 
-Initialize (Bmi *self)
+Initialize (Bmi *self, int et_method_int, const char *cfg_file)
 {
     et_model *et;
     et = (et_model *) self->data;
+    read_init_config(cfg_file, self->data);
+    et_setup(self->data, et_method_int);
     return BMI_SUCCESS;
 }
 
