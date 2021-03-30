@@ -37,15 +37,12 @@ extern int run(et_model* model)
 
   if(model->et_options.yes_aorc==TRUE)
   {
+    printf("YES AORC \n");
     // wind speed was measured at 10.0 m height, so we need to calculate the wind speed at 2.0m
     double numerator=log(2.0/model->et_params.zero_plane_displacement_height_m);
     double denominator=log(model->et_params.wind_speed_measurement_height_m/model->et_params.zero_plane_displacement_height_m);
     model->et_forcing.wind_speed_m_per_s = model->et_forcing.wind_speed_m_per_s*numerator/denominator;  // this is the 2 m value
     model->et_params.wind_speed_measurement_height_m=2.0;  // change because we converted from 10m to 2m height.
-  }
-
-  if(model->et_options.yes_aorc==TRUE) 
-  {
     // transfer aorc forcing data into our data structure for surface radiation calculations
     model->surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m = (double)model->aorc.incoming_shortwave_W_per_m2;
     model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m  = (double)model->aorc.incoming_longwave_W_per_m2; 
@@ -101,7 +98,6 @@ void et_setup(et_model* model, int et_method_option)
 {
 
   //##########################################################
-  // TODO: ALL OPTIONS READ IN FROM CONFIGURATION FILE.
   // TODO: READ IN FORCINGS FROM ASCII FILE.
   //##########################################################
 
@@ -124,9 +120,6 @@ void et_setup(et_model* model, int et_method_option)
     model->et_options.use_priestley_taylor_method = TRUE;
   if (et_method_option == 5)
     model->et_options.use_penman_monteith_method  = TRUE;
-  // Set this flag to TRUE if meteorological inputs come from AORC
-  model->et_options.yes_aorc = TRUE;                      // if TRUE, it means that we are using AORC data.
-  model->et_options.shortwave_radiation_provided = FALSE;
 
   //###################################################################################################
   // MAKE UP SOME TYPICAL AORC DATA.  THESE VALUES DRIVE THE UNIT TESTS.
@@ -156,22 +149,6 @@ void et_setup(et_model* model, int et_method_option)
   model->et_forcing.water_temperature_C           = 15.5; // TODO: from soil or lake thermal model
   model->et_forcing.ground_heat_flux_W_per_sq_m=-10.0;    // TODO from soil thermal model.  Negative denotes downward.
 
-  if(model->et_options.yes_aorc==TRUE)
-  {
-    model->et_params.wind_speed_measurement_height_m=10.0;  // AORC uses 10m.  Must convert to wind speed at 2 m height.
-  }
-  model->et_params.humidity_measurement_height_m=2.0; 
-  model->et_params.vegetation_height_m=0.12;   // used for unit test of aerodynamic resistance used in Penman Monteith method.     
-  model->et_params.zero_plane_displacement_height_m=0.0003;  // 0.03 cm for unit testing
-  model->et_params.momentum_transfer_roughness_length_m=0.0;  // zero means that default values will be used in routine.
-  model->et_params.heat_transfer_roughness_length_m=0.0;      // zero means that default values will be used in routine.
-
-  // surface radiation parameter values that are a function of land cover.   Must be assigned from land cover type.
-  //---------------------------------------------------------------------------------------------------------------
-  model->surf_rad_params.surface_longwave_emissivity=1.0; // this is 1.0 for granular surfaces, maybe 0.97 for water
-  model->surf_rad_params.surface_shortwave_albedo=0.22;  // this is a function of solar elev. angle for most surfaces.   
-
-
   if(model->et_options.yes_aorc!=TRUE)
   {
     // these values are needed if we don't have incoming longwave radiation measurements.
@@ -193,7 +170,6 @@ void et_setup(et_model* model, int et_method_option)
     model->surf_rad_forcing.cloud_cover_fraction                        = 0.6;       // from some forcing data file
     model->surf_rad_forcing.cloud_base_height_m                         = 2500.0/3.281; // assumed 2500 ft.
     
-
   // Surface radiation forcing parameter values that must come from other models
   //---------------------------------------------------------------------------------------------------------------
   model->surf_rad_forcing.surface_skin_temperature_C = 12.0;  // TODO from soil thermal model or vegetation model.
@@ -203,11 +179,6 @@ void et_setup(et_model* model, int et_method_option)
     // populate the elements of the structures needed to calculate shortwave (solar) radiation, and calculate it
     // ### OPTIONS ###
     model->solar_options.cloud_base_height_known=FALSE;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
-
-    // ### PARAMS ###
-    model->solar_params.latitude_degrees      =  37.25;   // THESE VALUES ARE FOR THE UNIT TEST
-    model->solar_params.longitude_degrees     = -97.5554; // THESE VALUES ARE FOR THE UNIT TEST
-    model->solar_params.site_elevation_m      = 303.333;  // THESE VALUES ARE FOR THE UNIT TEST  
 
     // ### FORCING ###
     model->surf_rad_forcing.cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 

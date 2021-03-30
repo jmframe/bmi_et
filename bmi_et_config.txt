@@ -1,5 +1,5 @@
-yes_aorc=TRUE
-yes_wrf=FALSE
+yes_aorc=1
+yes_wrf=0
 et_options=1
 wind_speed_measurement_height_m=10.0
 humidity_measurement_height_m=2.0
@@ -15,3 +15,4 @@ longitude_degrees=-97.5554
 site_elevation_m=303.33
 time_step_size=3600
 num_timesteps=1
+shortwave_radiation_provided=0
