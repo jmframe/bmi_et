@@ -1,3 +1,4 @@
+forcing_file=./forcing/test_forcing.csv
 yes_aorc=1
 yes_wrf=0
 et_options=1

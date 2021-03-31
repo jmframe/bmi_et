@@ -42,8 +42,72 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
     if (config_read_result == BMI_FAILURE)
         return BMI_FAILURE;
 
-    //et_setup(self->data, et_method_int);
     et_setup(et, et_method_int);
+    
+    // Figure out the number of lines first (also char count)
+    int forcing_line_count, max_forcing_line_length;
+    int count_result = read_file_line_counts(et->forcing_file, &forcing_line_count, &max_forcing_line_length);
+    if (count_result == -1) {
+        printf("Configured forcing file '%s' could not be opened for reading\n", et->forcing_file);
+        return BMI_FAILURE;
+    }
+    if (forcing_line_count == 1) {
+        printf("Invalid header-only forcing file '%s'\n", et->forcing_file);
+        return BMI_FAILURE;
+    }
+
+    // Now initialize empty arrays that depend on number of time steps
+    et->forcing_data_precip_kg_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_surface_pressure_Pa = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_time = malloc(sizeof(long) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_incoming_shortwave_W_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_incoming_longwave_W_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_specific_humidity_2m_kg_per_kg = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_air_temperature_2m_K = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_u_wind_speed_10m_m_per_s = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_v_wind_speed_10m_m_per_s = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+
+    // Now open it again to read the forcings
+    FILE* ffp = fopen(et->forcing_file, "r");
+    // Ensure still exists
+    if (ffp == NULL) {
+        printf("Forcing file '%s' disappeared!", et->forcing_file);
+        return BMI_FAILURE;
+    }
+
+    // Read forcing file and parse forcings
+    char line_str[max_forcing_line_length + 1];
+    long year, month, day, hour, minute;
+    double dsec;
+    // First read the header line
+    fgets(line_str, max_forcing_line_length + 1, ffp);
+    
+    aorc_forcing_data forcings;
+    for (int i = 0; i < et->bmi.num_timesteps; i++) {
+        fgets(line_str, max_forcing_line_length + 1, ffp);  // read in a line of AORC data.
+        parse_aorc_line(line_str, &year, &month, &day, &hour, &minute, &dsec, &forcings);
+        et->forcing_data_precip_kg_per_m2[i] = forcings.precip_kg_per_m2 * ((float)et->bmi.time_step_size);
+        printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
+        et->forcing_data_surface_pressure_Pa[i] = forcings.surface_pressure_Pa;
+        printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
+        et->forcing_data_incoming_longwave_W_per_m2[i] = forcings.incoming_longwave_W_per_m2;
+        printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
+        et->forcing_data_incoming_shortwave_W_per_m2[i] = forcings.incoming_shortwave_W_per_m2;
+        printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
+        et->forcing_data_specific_humidity_2m_kg_per_kg[i] = forcings.specific_humidity_2m_kg_per_kg;
+        printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
+        et->forcing_data_air_temperature_2m_K[i] = forcings.air_temperature_2m_K;
+        printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
+        et->forcing_data_u_wind_speed_10m_m_per_s[i] = forcings.u_wind_speed_10m_m_per_s;
+        printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
+        et->forcing_data_v_wind_speed_10m_m_per_s[i] = forcings.v_wind_speed_10m_m_per_s;
+        printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
+
+
+        et->forcing_data_time[i] = forcings.time;
+    }
+
+
     return BMI_SUCCESS;
 }
 
@@ -268,6 +332,12 @@ int read_init_config(const char* config_file, et_model* model)//,
             model->et_options.yes_aorc = strtod(param_value, NULL);
             printf("set aorc boolean from config file \n");
             printf("%d\n", model->et_options.yes_aorc);
+            continue;
+        }
+        if (strcmp(param_key, "forcing_file") == 0) {
+            model->forcing_file = strdup(param_value);
+            printf("set forcing file from config file \n");
+            printf("%s\n", model->forcing_file);
             continue;
         }
         if (strcmp(param_key, "wind_speed_measurement_height_m") == 0) {

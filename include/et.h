@@ -94,6 +94,7 @@ struct aorc_forcing_data
   float longitude;                       // degrees east of prime meridian. Negative west          | longitude
   long int time; //TODO: type?           // seconds since 1970-01-01 00:00:00.0 0:00               | time
 };
+typedef struct aorc_forcing_data aorc_forcing_data;
 
 struct evapotranspiration_options  // these determine which method is applied to calculate ET.
 {
@@ -224,6 +225,20 @@ struct et_model{
   int yes_wrf;  // if TRUE then we get radiation winds etc. from WRF output.  TODO not implemented.
   int et_method;
   double et_m_per_s;
+  char* forcing_file;
+  // ***********************************************************
+  // ******************* Dynamic allocations *******************
+  // ***********************************************************
+  //aorc_forcing_data* forcings;
+  double* forcing_data_precip_kg_per_m2;
+  double* forcing_data_surface_pressure_Pa;
+  long* forcing_data_time;
+  double* forcing_data_incoming_longwave_W_per_m2 ;     // Downward Long-Wave Rad. Flux at 0m height, W/m^2       | DLWRF_surface
+  double* forcing_data_incoming_shortwave_W_per_m2;     // Downward Short-Wave Radiation Flux at 0m height, W/m^2 | DSWRF_surface
+  double* forcing_data_specific_humidity_2m_kg_per_kg;  // Specific Humidity at 2m height, kg/kg                  | SPFH_2maboveground
+  double* forcing_data_air_temperature_2m_K;            // Air temparture at 2m height, K                         | TMP_2maboveground
+  double* forcing_data_u_wind_speed_10m_m_per_s;        // U-component of Wind at 10m height, m/s                 | UGRD_10maboveground
+  double* forcing_data_v_wind_speed_10m_m_per_s;        // V-component of Wind at 10m height, m/s                 | VGRD_10maboveground
 
   struct aorc_forcing_data aorc;
 
@@ -252,4 +267,19 @@ extern int run(et_model* model);
 
 void et_setup(et_model* model, int et_method_option);
 
+/**************************************************************************/
+/* ALL THE STUFF BELOW HERE IS JUST UTILITY MEMORY AND TIME FUNCTION CODE */
+/**************************************************************************/
+extern void parse_aorc_line(char *theString,long *year,long *month, long *day,long *hour,
+                            long *minute, double *dsec, struct aorc_forcing_data *aorc);
+
+extern void get_word(char *theString,int *start,int *end,char *theWord,int *wordlen);
+extern void itwo_alloc( int ***ptr, int x, int y);
+extern void dtwo_alloc( double ***ptr, int x, int y);
+extern void d_alloc(double **var,int size);
+extern void i_alloc(int **var,int size);
+extern double greg_2_jul(long year, long mon, long day, long h, long mi,
+                         double se);
+extern void calc_date(double jd, long *y, long *m, long *d, long *h, long *mi,
+                      double *sec);
 #endif
