@@ -21,7 +21,7 @@ main(int argc, const char *argv[])
   register_bmi_et(model);
 
   int et_method_int = 1*atoi(argv[1]);
-  const char *cfg_file = "/glade/work/jframe/bmi_et/bmi_et_config.txt";
+  const char *cfg_file = "/glade/work/jframe/alt-modular/modules/et_fred_five/bmi_et_config.txt";
   model->initialize(model, et_method_int, cfg_file);
   
   model->update(model);
@@ -36,8 +36,78 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
 {
     et_model *et;
     et = (et_model *) self->data;
-    read_init_config(cfg_file, self->data);
-    et_setup(self->data, et_method_int);
+
+    //int config_read_result = read_init_config(cfg_file, self->data);
+    int config_read_result = read_init_config(cfg_file, et);
+    if (config_read_result == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    et_setup(et, et_method_int);
+    
+    // Figure out the number of lines first (also char count)
+    int forcing_line_count, max_forcing_line_length;
+    int count_result = read_file_line_counts(et->forcing_file, &forcing_line_count, &max_forcing_line_length);
+    if (count_result == -1) {
+        printf("Configured forcing file '%s' could not be opened for reading\n", et->forcing_file);
+        return BMI_FAILURE;
+    }
+    if (forcing_line_count == 1) {
+        printf("Invalid header-only forcing file '%s'\n", et->forcing_file);
+        return BMI_FAILURE;
+    }
+
+    // Now initialize empty arrays that depend on number of time steps
+    et->forcing_data_precip_kg_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_surface_pressure_Pa = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_time = malloc(sizeof(long) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_incoming_shortwave_W_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_incoming_longwave_W_per_m2 = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_specific_humidity_2m_kg_per_kg = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_air_temperature_2m_K = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_u_wind_speed_10m_m_per_s = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+    et->forcing_data_v_wind_speed_10m_m_per_s = malloc(sizeof(double) * (et->bmi.num_timesteps + 1));
+
+    // Now open it again to read the forcings
+    FILE* ffp = fopen(et->forcing_file, "r");
+    // Ensure still exists
+    if (ffp == NULL) {
+        printf("Forcing file '%s' disappeared!", et->forcing_file);
+        return BMI_FAILURE;
+    }
+
+    // Read forcing file and parse forcings
+    char line_str[max_forcing_line_length + 1];
+    long year, month, day, hour, minute;
+    double dsec;
+    // First read the header line
+    fgets(line_str, max_forcing_line_length + 1, ffp);
+    
+    aorc_forcing_data forcings;
+    for (int i = 0; i < et->bmi.num_timesteps; i++) {
+        fgets(line_str, max_forcing_line_length + 1, ffp);  // read in a line of AORC data.
+        parse_aorc_line(line_str, &year, &month, &day, &hour, &minute, &dsec, &forcings);
+        et->forcing_data_precip_kg_per_m2[i] = forcings.precip_kg_per_m2 * ((float)et->bmi.time_step_size);
+        printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
+        et->forcing_data_surface_pressure_Pa[i] = forcings.surface_pressure_Pa;
+        printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
+        et->forcing_data_incoming_longwave_W_per_m2[i] = forcings.incoming_longwave_W_per_m2;
+        printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
+        et->forcing_data_incoming_shortwave_W_per_m2[i] = forcings.incoming_shortwave_W_per_m2;
+        printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
+        et->forcing_data_specific_humidity_2m_kg_per_kg[i] = forcings.specific_humidity_2m_kg_per_kg;
+        printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
+        et->forcing_data_air_temperature_2m_K[i] = forcings.air_temperature_2m_K;
+        printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
+        et->forcing_data_u_wind_speed_10m_m_per_s[i] = forcings.u_wind_speed_10m_m_per_s;
+        printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
+        et->forcing_data_v_wind_speed_10m_m_per_s[i] = forcings.v_wind_speed_10m_m_per_s;
+        printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
+
+
+        et->forcing_data_time[i] = forcings.time;
+    }
+
+
     return BMI_SUCCESS;
 }
 
@@ -55,10 +125,6 @@ new_bmi_et()
 {
     et_model *data;
     data = (et_model*) malloc(sizeof(et_model));
-
-    // READ THESE FROM CONFIG FILE:
-    data->bmi.time_step_size = 3600;
-    data->bmi.num_timesteps  = 1;
 
     return data;
 }
@@ -194,7 +260,6 @@ static int count_delimited_values(char* string_val, char* delimiter)
 //---------------------------------------------------------------------------------------------------------------------
 int read_file_line_counts(const char* file_name, int* line_count, int* max_line_length)
 {
-    printf("--- counting lines in config file ---\n");
 
     *line_count = 0;
     *max_line_length = 0;
@@ -234,44 +299,16 @@ int read_file_line_counts(const char* file_name, int* line_count, int* max_line_
     // Before returning, increment the max line length by 1, since the \n will be on the line also.
     *max_line_length += 1;
 
-    printf("line_count: ", line_count);
-    printf(":\n");
-    printf("max_line_length: ", max_line_length);
-    printf(":\n");
-
     return 0;
 }  // end: read_file_line_counts
 
 //---------------------------------------------------------------------------------------------------------------------
 int read_init_config(const char* config_file, et_model* model)//,
-//                     bool yes_aorc,
-//                     bool yes_wrf,
-//                     int* et_method_int,
-//                     double* wind_speed_measurement_height_m,
-//                     double* humidity_measurement_height_m,
-//                     double* vegetation_height_m,
-//                     double* zero_plane_displacement_height_m,
-//                     double* momentum_transfer_roughness_length,
-//                     double* heat_transfer_roughness_length_m,
-//                     double* surface_longwave_emissivity,
-//                     double* surface_shortwave_albedo,
-//                     bool* cloud_base_height_known,
-//                     double* latitude_degrees,
-//                     double* longitude_degrees,
-//                     double* site_elevation_m,
-//                     int time_step_size,
-//                     int num_timesteps)
 {
     int config_line_count, max_config_line_length;
     // Note that this determines max line length including the ending return character, if present
     int count_result = read_file_line_counts(config_file, &config_line_count, &max_config_line_length);
-    printf("config_line_count ",config_line_count);
-    printf("\n");
-    printf("max_config_line_length ", max_config_line_length);
-    printf("\n");
     if (count_result == -1) {
-        printf("Invalid config file '%s'", config_file);
-        printf("\n");
         return BMI_FAILURE;
     }
 
@@ -283,11 +320,112 @@ int read_init_config(const char* config_file, et_model* model)//,
 
     char config_line[max_config_line_length + 1];
 
-    int is_et_options_set = FALSE;
-    int is_et_parms_set = FALSE;
-    int is_surf_rad_parms_set = FALSE;
-    int is_solar_options_set = FALSE;
-    int is_solar_parms_set = FALSE;
+    for (int i = 0; i < config_line_count; i++) {
+        char *param_key, *param_value;
+        fgets(config_line, max_config_line_length + 1, fp);
+        char* config_line_ptr = config_line;
+        config_line_ptr = strsep(&config_line_ptr, "\n");
+        param_key = strsep(&config_line_ptr, "=");
+        param_value = strsep(&config_line_ptr, "=");
+
+        if (strcmp(param_key, "yes_aorc") == 0) {
+            model->et_options.yes_aorc = strtod(param_value, NULL);
+            printf("set aorc boolean from config file \n");
+            printf("%d\n", model->et_options.yes_aorc);
+            continue;
+        }
+        if (strcmp(param_key, "forcing_file") == 0) {
+            model->forcing_file = strdup(param_value);
+            printf("set forcing file from config file \n");
+            printf("%s\n", model->forcing_file);
+            continue;
+        }
+        if (strcmp(param_key, "wind_speed_measurement_height_m") == 0) {
+            model->et_params.wind_speed_measurement_height_m = strtod(param_value, NULL);
+            printf("set wind speed measurement height from config file \n");
+            printf("%lf\n", model->et_params.wind_speed_measurement_height_m);
+            continue;
+        }
+        if (strcmp(param_key, "humidity_measurement_height_m") == 0) {
+            model->et_params.humidity_measurement_height_m = strtod(param_value, NULL);
+            printf("set humidity measurement height from config file \n");
+            printf("%lf\n", model->et_params.humidity_measurement_height_m);
+            continue;
+        }
+        if (strcmp(param_key, "vegetation_height_m") == 0) {
+            model->et_params.vegetation_height_m = strtod(param_value, NULL);
+            printf("vegetation height from config file \n");
+            printf("%lf\n", model->et_params.vegetation_height_m);
+            continue;
+        }
+        if (strcmp(param_key, "zero_plane_displacement_height_m") == 0) {
+            model->et_params.zero_plane_displacement_height_m = strtod(param_value, NULL);
+            printf("zero_plane_displacement height from config file \n");
+            printf("%lf\n", model->et_params.zero_plane_displacement_height_m);
+            continue;
+        }
+        if (strcmp(param_key, "shortwave_radiation_provided") == 0) {
+            model->et_options.shortwave_radiation_provided = strtod(param_value, NULL);
+            printf("shortwave radiation provided boolean from config file \n");
+            printf("%d\n", model->et_options.shortwave_radiation_provided);
+            continue;
+        }
+        if (strcmp(param_key, "momentum_transfer_roughness_length_m") == 0) {
+            model->et_params.momentum_transfer_roughness_length_m = strtod(param_value, NULL);
+            printf("momentum_transfer_roughness_length_m from config file \n");
+            printf("%lf\n", model->et_params.momentum_transfer_roughness_length_m);
+            continue;
+        }
+        if (strcmp(param_key, "surface_longwave_emissivity") == 0) {
+            model->surf_rad_params.surface_longwave_emissivity = strtod(param_value, NULL);
+            printf("surface_longwave_emissivity from config file \n");
+            printf("%lf\n", model->surf_rad_params.surface_longwave_emissivity);
+            continue;
+        }
+        if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
+            model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
+            printf("surface_shortwave_albedo from config file \n");
+            printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            continue;
+        }
+        if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
+            model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
+            printf("surface_shortwave_albedo from config file \n");
+            printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            continue;
+        }
+        if (strcmp(param_key, "latitude_degrees") == 0) {
+            model->solar_params.latitude_degrees = strtod(param_value, NULL);
+            printf("latitude_degrees from config file \n");
+            printf("%lf\n", model->solar_params.latitude_degrees);
+            continue;
+        }
+        if (strcmp(param_key, "longitude_degrees") == 0) {
+            model->solar_params.longitude_degrees = strtod(param_value, NULL);
+            printf("longitude_degrees from config file \n");
+            printf("%lf\n", model->solar_params.longitude_degrees);
+            continue;
+        }
+        if (strcmp(param_key, "site_elevation_m") == 0) {
+            model->solar_params.site_elevation_m = strtod(param_value, NULL);
+            printf("site_elevation_m from config file \n");
+            printf("%lf\n", model->solar_params.site_elevation_m);
+            continue;
+        }
+        if (strcmp(param_key, "time_step_size") == 0) {
+            model->bmi.time_step_size = strtod(param_value, NULL);
+            printf("time_step_size from config file \n");
+            printf("%d\n", model->bmi.time_step_size);
+            continue;
+        }
+        if (strcmp(param_key, "num_timesteps") == 0) {
+            model->bmi.num_timesteps = strtod(param_value, NULL);
+            printf("num_timesteps from config file \n");
+            printf("%d\n", model->bmi.num_timesteps);
+            continue;
+        }
+
+    } // end loop through config
 
     return BMI_SUCCESS;
 } // end: read_init_config
