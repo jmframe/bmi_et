@@ -27,18 +27,34 @@ extern void free_et_model(et_model *model) {
 extern int run(et_model* model)
 
 {
+
   // populate the evapotranspiration forcing data structure:
   //---------------------------------------------------------------------------------------------------------------
-  model->et_forcing.air_temperature_C             = (double)model->aorc.air_temperature_2m_K-TK;  // gotta convert it to C
+//  model->et_forcing.air_temperature_C             = (double)model->aorc.air_temperature_2m_K-TK;  // gotta convert it to C
+  model->et_forcing.air_temperature_C = model->forcing_data_air_temperature_2m_K[model->bmi.current_step] - TK;  // gotta convert it to C
+
   model->et_forcing.relative_humidity_percent     = (double)-99.9; // this negative number means use specific humidity
-  model->et_forcing.specific_humidity_2m_kg_per_kg= (double)model->aorc.specific_humidity_2m_kg_per_kg;
-  model->et_forcing.air_pressure_Pa               = (double)model->aorc.surface_pressure_Pa;
-  model->et_forcing.wind_speed_m_per_s            = hypot((double)model->aorc.u_wind_speed_10m_m_per_s,
-                                                   (double)model->aorc.v_wind_speed_10m_m_per_s);                 
+
+//  model->et_forcing.specific_humidity_2m_kg_per_kg= (double)model->aorc.specific_humidity_2m_kg_per_kg;
+  model->et_forcing.specific_humidity_2m_kg_per_kg = model->forcing_data_precip_kg_per_m2[model->bmi.current_step];
+  
+  model->et_forcing.air_pressure_Pa               = model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
+  model->et_forcing.wind_speed_m_per_s            = hypot(model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step],
+                                                          model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step]);                 
 
   if(model->et_options.yes_aorc==TRUE)
   {
     printf("YES AORC \n");
+    model->aorc.incoming_longwave_W_per_m2     =  model->forcing_data_incoming_longwave_W_per_m2[model->bmi.current_step];
+    model->aorc.incoming_shortwave_W_per_m2    =  model->forcing_data_incoming_shortwave_W_per_m2[model->bmi.current_step];
+    model->aorc.surface_pressure_Pa            =  model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
+    model->aorc.specific_humidity_2m_kg_per_kg =  model->forcing_data_specific_humidity_2m_kg_per_kg[model->bmi.current_step];
+    model->aorc.air_temperature_2m_K           =  model->forcing_data_air_temperature_2m_K[model->bmi.current_step];
+    model->aorc.u_wind_speed_10m_m_per_s       =  model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step];
+    model->aorc.v_wind_speed_10m_m_per_s       =  model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step];
+    model->aorc.latitude                       =  model->solar_params.latitude_degrees;
+    model->aorc.longitude                      =  model->solar_params.longitude_degrees;
+
     // wind speed was measured at 10.0 m height, so we need to calculate the wind speed at 2.0m
     double numerator=log(2.0/model->et_params.zero_plane_displacement_height_m);
     double denominator=log(model->et_params.wind_speed_measurement_height_m/model->et_params.zero_plane_displacement_height_m);
@@ -48,9 +64,11 @@ extern int run(et_model* model)
     model->surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m = (double)model->aorc.incoming_shortwave_W_per_m2;
     model->surf_rad_forcing.incoming_longwave_radiation_W_per_sq_m  = (double)model->aorc.incoming_longwave_W_per_m2; 
     model->surf_rad_forcing.air_temperature_C                       = (double)model->aorc.air_temperature_2m_K-TK;
+
     // compute relative humidity from specific humidity..
     double saturation_vapor_pressure_Pa = calc_air_saturation_vapor_pressure_Pa(model->surf_rad_forcing.air_temperature_C);
     double actual_vapor_pressure_Pa = (double)model->aorc.specific_humidity_2m_kg_per_kg*(double)model->aorc.surface_pressure_Pa/0.622;
+
     model->surf_rad_forcing.relative_humidity_percent = 100.0*actual_vapor_pressure_Pa/saturation_vapor_pressure_Pa;
     // sanity check the resulting value.  Should be less than 100%.  Sometimes air can be supersaturated.
     if(100.0< model->surf_rad_forcing.relative_humidity_percent) model->surf_rad_forcing.relative_humidity_percent = 99.0;

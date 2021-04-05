@@ -21,7 +21,7 @@ main(int argc, const char *argv[])
   register_bmi_et(model);
 
   int et_method_int = 1*atoi(argv[1]);
-  const char *cfg_file = "/glade/work/jframe/alt-modular/modules/et_fred_five/bmi_et_config.txt";
+  const char *cfg_file = "/glade/work/jframe/alt-modular/Modules/et-bmi/bmi_et_config.txt";
   model->initialize(model, et_method_int, cfg_file);
   
   model->update(model);
@@ -107,6 +107,10 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
         et->forcing_data_time[i] = forcings.time;
     }
 
+    // Set the current time step to the first idem in the forcing time series.
+    // But should this be an option? Would we ever initialize to a point in the
+    //     middle of a forcing file?
+    et->bmi.current_step = 0;
 
     return BMI_SUCCESS;
 }
@@ -117,6 +121,7 @@ Update (Bmi *self)
     et_model *et = (et_model *) self->data;
     run(et);
     et->bmi.current_time_step += et->bmi.time_step_size;
+    et->bmi.current_step +=1;
     return BMI_SUCCESS;
 }
 
@@ -136,6 +141,7 @@ Finalize (Bmi *self)
     et_model* model = (et_model *)(self->data);
     self->data = (void*)new_bmi_et();
   }
+  return BMI_SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
