@@ -214,8 +214,8 @@ struct bmi
 {
   int time_step_size;
   int num_timesteps;
-  int current_time_step;
-
+  int current_time_step;   // this is the actual time of the run.
+  int current_step;        //this is a sequential value to find the correct row from forcing file
 };
 
 struct et_model{
