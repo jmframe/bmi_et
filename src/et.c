@@ -117,10 +117,6 @@ void et_setup(et_model* model, int et_method_option)
 {
 
   //##########################################################
-  // TODO: READ IN FORCINGS FROM ASCII FILE.
-  //##########################################################
-
-  //##########################################################
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.
   //##########################################################
   model->et_method = et_method_option;
@@ -233,7 +229,14 @@ void et_setup(et_model* model, int et_method_option)
 }
 
 
+void et_unit_tests(et_model* model)
+{
 
+  printf("solar elevation angle is %lf degrees,\n and should be: 43.29101185 degrees \n",
+      model->solar_results.solar_elevation_angle_degrees);
+
+  return;
+}
 
 /**************************************************************************/
 /**************************************************************************/
