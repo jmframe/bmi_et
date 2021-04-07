@@ -216,6 +216,7 @@ struct bmi
   int num_timesteps;
   int current_time_step;   // this is the actual time of the run.
   int current_step;        //this is a sequential value to find the correct row from forcing file
+  int verbose;
 };
 
 struct et_model{
@@ -266,6 +267,7 @@ extern void free_et_model(et_model *model);
 extern int run(et_model* model);
 
 void et_setup(et_model* model, int et_method_option);
+void et_unit_tests(et_model* model);
 
 /**************************************************************************/
 /* ALL THE STUFF BELOW HERE IS JUST UTILITY MEMORY AND TIME FUNCTION CODE */

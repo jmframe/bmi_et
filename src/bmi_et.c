@@ -21,7 +21,7 @@ main(int argc, const char *argv[])
   register_bmi_et(model);
 
   int et_method_int = 1*atoi(argv[1]);
-  const char *cfg_file = "/glade/work/jframe/alt-modular/Modules/et-bmi/bmi_et_config.txt";
+  const char *cfg_file = "/glade/work/jframe/alt-modular/Modules/et-bmi/et_config_unit_test1.txt";
   model->initialize(model, et_method_int, cfg_file);
   
   model->update(model);
@@ -122,6 +122,11 @@ Update (Bmi *self)
     run(et);
     et->bmi.current_time_step += et->bmi.time_step_size;
     et->bmi.current_step +=1;
+
+    // Perform Unit Tests, if set in config file.
+    if (et->bmi.verbose > 1)
+      et_unit_tests(et);
+
     return BMI_SUCCESS;
 }
 
@@ -334,100 +339,141 @@ int read_init_config(const char* config_file, et_model* model)//,
         param_key = strsep(&config_line_ptr, "=");
         param_value = strsep(&config_line_ptr, "=");
 
+        if (strcmp(param_key, "verbose") == 0){
+            model->bmi.verbose = strtod(param_value, NULL);
+            if(model->bmi.verbose == 1){
+                printf("printing some stuff (level 1) for unit tests and troubleshooting \n");
+            }
+            if(model->bmi.verbose > 1){
+                printf("printing a lot of stuff (level >1) for unit tests and troubleshooting \n");
+            }
+        }
         if (strcmp(param_key, "yes_aorc") == 0) {
             model->et_options.yes_aorc = strtod(param_value, NULL);
-            printf("set aorc boolean from config file \n");
-            printf("%d\n", model->et_options.yes_aorc);
+            if(model->bmi.verbose > 1){
+                printf("set aorc boolean from config file \n");
+                printf("%d\n", model->et_options.yes_aorc);
+            }
             continue;
         }
         if (strcmp(param_key, "forcing_file") == 0) {
             model->forcing_file = strdup(param_value);
-            printf("set forcing file from config file \n");
-            printf("%s\n", model->forcing_file);
+            if(model->bmi.verbose > 1){
+                printf("set forcing file from config file \n");
+                printf("%s\n", model->forcing_file);
+            }
             continue;
         }
         if (strcmp(param_key, "wind_speed_measurement_height_m") == 0) {
             model->et_params.wind_speed_measurement_height_m = strtod(param_value, NULL);
-            printf("set wind speed measurement height from config file \n");
-            printf("%lf\n", model->et_params.wind_speed_measurement_height_m);
+            if(model->bmi.verbose > 1){
+                printf("set wind speed measurement height from config file \n");
+                printf("%lf\n", model->et_params.wind_speed_measurement_height_m);
+            }
             continue;
         }
         if (strcmp(param_key, "humidity_measurement_height_m") == 0) {
             model->et_params.humidity_measurement_height_m = strtod(param_value, NULL);
-            printf("set humidity measurement height from config file \n");
-            printf("%lf\n", model->et_params.humidity_measurement_height_m);
+            if(model->bmi.verbose > 1){
+                printf("set humidity measurement height from config file \n");
+                printf("%lf\n", model->et_params.humidity_measurement_height_m);
+            }
             continue;
         }
         if (strcmp(param_key, "vegetation_height_m") == 0) {
             model->et_params.vegetation_height_m = strtod(param_value, NULL);
-            printf("vegetation height from config file \n");
-            printf("%lf\n", model->et_params.vegetation_height_m);
+            if(model->bmi.verbose > 1){
+                printf("vegetation height from config file \n");
+                printf("%lf\n", model->et_params.vegetation_height_m);
+            }
             continue;
         }
         if (strcmp(param_key, "zero_plane_displacement_height_m") == 0) {
             model->et_params.zero_plane_displacement_height_m = strtod(param_value, NULL);
-            printf("zero_plane_displacement height from config file \n");
-            printf("%lf\n", model->et_params.zero_plane_displacement_height_m);
+            if(model->bmi.verbose > 1){
+                printf("zero_plane_displacement height from config file \n");
+                printf("%lf\n", model->et_params.zero_plane_displacement_height_m);
+            }
             continue;
         }
         if (strcmp(param_key, "shortwave_radiation_provided") == 0) {
             model->et_options.shortwave_radiation_provided = strtod(param_value, NULL);
-            printf("shortwave radiation provided boolean from config file \n");
-            printf("%d\n", model->et_options.shortwave_radiation_provided);
+            if(model->bmi.verbose > 1){
+                printf("shortwave radiation provided boolean from config file \n");
+                printf("%d\n", model->et_options.shortwave_radiation_provided);
+            }
             continue;
         }
         if (strcmp(param_key, "momentum_transfer_roughness_length_m") == 0) {
             model->et_params.momentum_transfer_roughness_length_m = strtod(param_value, NULL);
-            printf("momentum_transfer_roughness_length_m from config file \n");
-            printf("%lf\n", model->et_params.momentum_transfer_roughness_length_m);
+            if(model->bmi.verbose > 1){
+                printf("momentum_transfer_roughness_length_m from config file \n");
+                printf("%lf\n", model->et_params.momentum_transfer_roughness_length_m);
+            }
             continue;
         }
         if (strcmp(param_key, "surface_longwave_emissivity") == 0) {
             model->surf_rad_params.surface_longwave_emissivity = strtod(param_value, NULL);
-            printf("surface_longwave_emissivity from config file \n");
-            printf("%lf\n", model->surf_rad_params.surface_longwave_emissivity);
+            if(model->bmi.verbose > 1){
+                printf("surface_longwave_emissivity from config file \n");
+                printf("%lf\n", model->surf_rad_params.surface_longwave_emissivity);
+            }
             continue;
         }
         if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
             model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
-            printf("surface_shortwave_albedo from config file \n");
-            printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            if(model->bmi.verbose > 1){
+                printf("surface_shortwave_albedo from config file \n");
+                printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            }
             continue;
         }
         if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
             model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
-            printf("surface_shortwave_albedo from config file \n");
-            printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            if(model->bmi.verbose > 1){
+                printf("surface_shortwave_albedo from config file \n");
+                printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
+            }
             continue;
         }
         if (strcmp(param_key, "latitude_degrees") == 0) {
             model->solar_params.latitude_degrees = strtod(param_value, NULL);
-            printf("latitude_degrees from config file \n");
-            printf("%lf\n", model->solar_params.latitude_degrees);
+            if(model->bmi.verbose > 1){
+                printf("latitude_degrees from config file \n");
+                printf("%lf\n", model->solar_params.latitude_degrees);
+            }
             continue;
         }
         if (strcmp(param_key, "longitude_degrees") == 0) {
             model->solar_params.longitude_degrees = strtod(param_value, NULL);
-            printf("longitude_degrees from config file \n");
-            printf("%lf\n", model->solar_params.longitude_degrees);
+            if(model->bmi.verbose > 1){
+                printf("longitude_degrees from config file \n");
+                printf("%lf\n", model->solar_params.longitude_degrees);
+            }
             continue;
         }
         if (strcmp(param_key, "site_elevation_m") == 0) {
             model->solar_params.site_elevation_m = strtod(param_value, NULL);
-            printf("site_elevation_m from config file \n");
-            printf("%lf\n", model->solar_params.site_elevation_m);
+            if(model->bmi.verbose > 1){
+                printf("site_elevation_m from config file \n");
+                printf("%lf\n", model->solar_params.site_elevation_m);
+            }
             continue;
         }
         if (strcmp(param_key, "time_step_size") == 0) {
             model->bmi.time_step_size = strtod(param_value, NULL);
-            printf("time_step_size from config file \n");
-            printf("%d\n", model->bmi.time_step_size);
+            if(model->bmi.verbose > 1){
+                printf("time_step_size from config file \n");
+                printf("%d\n", model->bmi.time_step_size);
+            }
             continue;
         }
         if (strcmp(param_key, "num_timesteps") == 0) {
             model->bmi.num_timesteps = strtod(param_value, NULL);
-            printf("num_timesteps from config file \n");
-            printf("%d\n", model->bmi.num_timesteps);
+            if(model->bmi.verbose > 1){
+                printf("num_timesteps from config file \n");
+                printf("%d\n", model->bmi.num_timesteps);
+            }
             continue;
         }
 
