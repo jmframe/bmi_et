@@ -87,21 +87,29 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
         fgets(line_str, max_forcing_line_length + 1, ffp);  // read in a line of AORC data.
         parse_aorc_line(line_str, &year, &month, &day, &hour, &minute, &dsec, &forcings);
         et->forcing_data_precip_kg_per_m2[i] = forcings.precip_kg_per_m2 * ((float)et->bmi.time_step_size);
-        printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
+        if (et->bmi.verbose >=1)
+            printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
         et->forcing_data_surface_pressure_Pa[i] = forcings.surface_pressure_Pa;
-        printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
+        if (et->bmi.verbose >=1)
+            printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
         et->forcing_data_incoming_longwave_W_per_m2[i] = forcings.incoming_longwave_W_per_m2;
-        printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
+        if (et->bmi.verbose >=1)
+            printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
         et->forcing_data_incoming_shortwave_W_per_m2[i] = forcings.incoming_shortwave_W_per_m2;
-        printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
+        if (et->bmi.verbose >=1)
+            printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
         et->forcing_data_specific_humidity_2m_kg_per_kg[i] = forcings.specific_humidity_2m_kg_per_kg;
-        printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
+        if (et->bmi.verbose >=1)
+            printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
         et->forcing_data_air_temperature_2m_K[i] = forcings.air_temperature_2m_K;
-        printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
+        if (et->bmi.verbose >=1)
+            printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
         et->forcing_data_u_wind_speed_10m_m_per_s[i] = forcings.u_wind_speed_10m_m_per_s;
-        printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
+        if (et->bmi.verbose >=1)
+            printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
         et->forcing_data_v_wind_speed_10m_m_per_s[i] = forcings.v_wind_speed_10m_m_per_s;
-        printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
+        if (et->bmi.verbose >=1)
+            printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
 
 
         et->forcing_data_time[i] = forcings.time;
@@ -120,6 +128,7 @@ Update (Bmi *self)
 {
     et_model *et = (et_model *) self->data;
     run(et);
+
     et->bmi.current_time_step += et->bmi.time_step_size;
     et->bmi.current_step +=1;
 
