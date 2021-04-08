@@ -62,13 +62,13 @@ double calculate_net_radiation_W_per_sq_m(et_model *model)
     surface_longwave_albedo=0.03;   // water - actually not this simple, but close enough for now
   }
   
-  if(model->et_options.yes_aorc==FALSE)  // we must calculate longwave incoming from the atmosphere 
+  if(model->et_options.yes_aorc==0)  // we must calculate longwave incoming from the atmosphere 
     saturation_water_vapor_partial_pressure_Pa=calc_air_saturation_vapor_pressure_Pa(model->surf_rad_forcing.air_temperature_C); 
 
   actual_water_vapor_partial_pressure_Pa=model->surf_rad_forcing.relative_humidity_percent/100.0*
                                          saturation_water_vapor_partial_pressure_Pa;
 
-  if(model->et_options.yes_aorc==FALSE)
+  if(model->et_options.yes_aorc==0)
   {
     // CALCULATE DOWNWELLING LONGWAVE RADIATION FLUX FROM ATMOSPHERE, W/m2.
     if(0.90 < model->surf_rad_forcing.cloud_cover_fraction) // very nearly overcast or overcast
@@ -339,7 +339,7 @@ void calculate_solar_radiation(et_model* model)
     Ic=b*Io*exp(-0.09*optical_air_mass*(model->surf_rad_forcing.atmospheric_turbidity_factor-1.0));  // clear sky radiation
 
     // adjust for cloudiness effects using procedure from Bras' Hydrology text
-    if(model->solar_options.cloud_base_height_known==TRUE) 
+    if(model->solar_options.cloud_base_height_known==1) 
     {
       // percent of cloudless insolation, z= cloud base elev km.
       kshort=0.18+0.0853*model->surf_rad_forcing.cloud_base_height_m/1000.0;   // convert cloud base height to km for this calc.                                   

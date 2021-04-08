@@ -42,9 +42,10 @@ extern int run(et_model* model)
   model->et_forcing.wind_speed_m_per_s            = hypot(model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step],
                                                           model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step]);                 
 
-  if(model->et_options.yes_aorc==TRUE)
+  if(model->et_options.yes_aorc==1)
   {
-    printf("YES AORC \n");
+    if (model->bmi.verbose >=1)
+        printf("YES AORC \n");
     model->aorc.incoming_longwave_W_per_m2     =  model->forcing_data_incoming_longwave_W_per_m2[model->bmi.current_step];
     model->aorc.incoming_shortwave_W_per_m2    =  model->forcing_data_incoming_shortwave_W_per_m2[model->bmi.current_step];
     model->aorc.surface_pressure_Pa            =  model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
@@ -74,41 +75,41 @@ extern int run(et_model* model)
     if(100.0< model->surf_rad_forcing.relative_humidity_percent) model->surf_rad_forcing.relative_humidity_percent = 99.0;
   }
 
-  if(model->et_options.shortwave_radiation_provided=FALSE)
+  if(model->et_options.shortwave_radiation_provided==0)
   {
     // populate the elements of the structures needed to calculate shortwave (solar) radiation, and calculate it
     // ### OPTIONS ###
-    model->solar_options.cloud_base_height_known=FALSE;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
+    model->solar_options.cloud_base_height_known=0;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
 
     calculate_solar_radiation(model);
   }
   
   // we must calculate the net radiation before calling the ET subroutine.
-  if(model->et_options.use_aerodynamic_method==FALSE) 
+  if(model->et_options.use_aerodynamic_method==0) 
   {
     // NOTE don't call this function use_aerodynamic_method option is TRUE
     model->et_forcing.net_radiation_W_per_sq_m=calculate_net_radiation_W_per_sq_m(model);
   }
 
-  if(model->et_options.use_energy_balance_method ==TRUE)
+  if(model->et_options.use_energy_balance_method ==1)
     model->et_m_per_s=evapotranspiration_energy_balance_method(model);
-  if(model->et_options.use_aerodynamic_method ==TRUE)
+  if(model->et_options.use_aerodynamic_method ==1)
     model->et_m_per_s=evapotranspiration_aerodynamic_method(model);
-  if(model->et_options.use_combination_method ==TRUE)
+  if(model->et_options.use_combination_method ==1)
     model->et_m_per_s=evapotranspiration_combination_method(model);
-  if(model->et_options.use_priestley_taylor_method ==TRUE)
+  if(model->et_options.use_priestley_taylor_method ==1)
     model->et_m_per_s=evapotranspiration_priestley_taylor_method(model);
-  if(model->et_options.use_penman_monteith_method ==TRUE)
+  if(model->et_options.use_penman_monteith_method ==1)
     model->et_m_per_s=evapotranspiration_penman_monteith_method(model);
 
-  if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
-  if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
-  if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
-  if(model->et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
-  if(model->et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
+  if(model->et_options.use_energy_balance_method ==1)   printf("energy balance method:\n");
+  if(model->et_options.use_aerodynamic_method ==1)      printf("aerodynamic method:\n");
+  if(model->et_options.use_combination_method ==1)      printf("combination method:\n");
+  if(model->et_options.use_priestley_taylor_method ==1) printf("Priestley-Taylor method:\n");
+  if(model->et_options.use_penman_monteith_method ==1)  printf("Penman Monteith method:\n");
                                                  
   printf("calculated instantaneous potential evapotranspiration (PET) =%8.6e m/s\n",model->et_m_per_s);
-  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",model->et_m_per_s*86400.0*1000.0);
+  //printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",model->et_m_per_s*86400.0*1000.0);
   
   return 0;
 }
@@ -120,21 +121,21 @@ void et_setup(et_model* model, int et_method_option)
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.
   //##########################################################
   model->et_method = et_method_option;
-  model->et_options.use_energy_balance_method   = FALSE;
-  model->et_options.use_aerodynamic_method      = FALSE;
-  model->et_options.use_combination_method      = FALSE;
-  model->et_options.use_priestley_taylor_method = FALSE;
-  model->et_options.use_penman_monteith_method  = FALSE;
+  model->et_options.use_energy_balance_method   = 0;
+  model->et_options.use_aerodynamic_method      = 0;
+  model->et_options.use_combination_method      = 0;
+  model->et_options.use_priestley_taylor_method = 0;
+  model->et_options.use_penman_monteith_method  = 0;
   if (et_method_option == 1)
-    model->et_options.use_energy_balance_method   = TRUE;
+    model->et_options.use_energy_balance_method   = 1;
   if (et_method_option == 2)
-    model->et_options.use_aerodynamic_method      = TRUE;
+    model->et_options.use_aerodynamic_method      = 1;
   if (et_method_option == 3)
-    model->et_options.use_combination_method      = TRUE;
+    model->et_options.use_combination_method      = 1;
   if (et_method_option == 4)
-    model->et_options.use_priestley_taylor_method = TRUE;
+    model->et_options.use_priestley_taylor_method = 1;
   if (et_method_option == 5)
-    model->et_options.use_penman_monteith_method  = TRUE;
+    model->et_options.use_penman_monteith_method  = 1;
 
   //###################################################################################################
   // MAKE UP SOME TYPICAL AORC DATA.  THESE VALUES DRIVE THE UNIT TESTS.
@@ -164,7 +165,7 @@ void et_setup(et_model* model, int et_method_option)
   model->et_forcing.water_temperature_C           = 15.5; // TODO: from soil or lake thermal model
   model->et_forcing.ground_heat_flux_W_per_sq_m=-10.0;    // TODO from soil thermal model.  Negative denotes downward.
 
-  if(model->et_options.yes_aorc!=TRUE)
+  if(model->et_options.yes_aorc!=1)
   {
     // these values are needed if we don't have incoming longwave radiation measurements.
     model->surf_rad_forcing.incoming_shortwave_radiation_W_per_sq_m     = 440.1;     // must come from somewhere
@@ -189,11 +190,11 @@ void et_setup(et_model* model, int et_method_option)
   //---------------------------------------------------------------------------------------------------------------
   model->surf_rad_forcing.surface_skin_temperature_C = 12.0;  // TODO from soil thermal model or vegetation model.
 
-  if(model->et_options.shortwave_radiation_provided=FALSE)
+  if(model->et_options.shortwave_radiation_provided==0)
   {
     // populate the elements of the structures needed to calculate shortwave (solar) radiation, and calculate it
     // ### OPTIONS ###
-    model->solar_options.cloud_base_height_known=FALSE;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
+    model->solar_options.cloud_base_height_known=0;  // set to TRUE if the solar_forcing.cloud_base_height_m is known.
 
     // ### FORCING ###
     model->surf_rad_forcing.cloud_cover_fraction         =   0.5;   // THESE VALUES ARE FOR THE UNIT TEST 
@@ -201,11 +202,11 @@ void et_setup(et_model* model, int et_method_option)
     model->surf_rad_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
     model->surf_rad_forcing.zulu_time                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
 
-    if(model->et_options.use_energy_balance_method ==TRUE)   printf("energy balance method:\n");
-    if(model->et_options.use_aerodynamic_method ==TRUE)      printf("aerodynamic method:\n");
-    if(model->et_options.use_combination_method ==TRUE)      printf("combination method:\n");
-    if(model->et_options.use_priestley_taylor_method ==TRUE) printf("Priestley-Taylor method:\n");
-    if(model->et_options.use_penman_monteith_method ==TRUE)  printf("Penman Monteith method:\n");
+    if(model->et_options.use_energy_balance_method ==1)   printf("energy balance method:\n");
+    if(model->et_options.use_aerodynamic_method ==1)      printf("aerodynamic method:\n");
+    if(model->et_options.use_combination_method ==1)      printf("combination method:\n");
+    if(model->et_options.use_priestley_taylor_method ==1) printf("Priestley-Taylor method:\n");
+    if(model->et_options.use_penman_monteith_method ==1)  printf("Penman Monteith method:\n");
   
     // UNIT TEST RESULTS
     // CALCULATED SOLAR FLUXES
@@ -231,10 +232,33 @@ void et_setup(et_model* model, int et_method_option)
 
 void et_unit_tests(et_model* model)
 {
-
+  printf("\n #----------- BEGIN UNIT TESTS   ---------------# \n");
+  
+  printf("\n #-----------       UNIT TEST    ---------------# \n");
   printf("solar elevation angle is %lf degrees,\n and should be: 43.29101185 degrees \n",
       model->solar_results.solar_elevation_angle_degrees);
+  
+  printf("\n #-----------       UNIT TEST    ---------------# \n");
+  printf("solar azimuth angle is %lf degrees,\n and should be: 225.06371958 degrees \n",
+      model->solar_results.solar_azimuth_angle_degrees);
+  
+  printf("\n #-----------       UNIT TEST    ---------------# \n");
+  printf("solar local hour angle is %lf degrees,\n and should be: 31.01549773 degrees \n",
+      model->solar_results.solar_local_hour_angle_degrees);
+  
+  printf("\n #-----------       UNIT TEST    ---------------# \n");
+  if (model->et_options.use_energy_balance_method == 1)
+      printf("potential ET is %8.6e m/s,\n and should be: 8.594743e-08 m/s \n", model->et_m_per_s);
+  if (model->et_options.use_aerodynamic_method == 1)
+      printf("potential ET is %8.6e m/s,\n and should be: 8.977490e-08 m/s \n", model->et_m_per_s);
+  if (model->et_options.use_combination_method == 1)
+      printf("potential ET is %8.6e m/s,\n and should be: 8.694909e-08 m/s \n", model->et_m_per_s);
+  if (model->et_options.use_priestley_taylor_method == 1)
+      printf("potential ET is %8.6e m/s,\n and should be: 8.249098e-08 m/s \n", model->et_m_per_s);
+  if (model->et_options.use_penman_monteith_method == 1)
+      printf("potential ET is %8.6e m/s,\n and should be: 1.106268e-08 m/s \n", model->et_m_per_s);
 
+  printf("\n #------------  END UNIT TESTS   ---------------# \n");
   return;
 }
 
