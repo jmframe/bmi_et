@@ -217,6 +217,7 @@ struct bmi
   int current_time_step;   // this is the actual time of the run.
   int current_step;        //this is a sequential value to find the correct row from forcing file
   int verbose;
+  int run_unit_tests;
 };
 
 struct et_model{

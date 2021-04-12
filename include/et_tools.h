@@ -425,12 +425,12 @@ void calculate_intermediate_variables(et_model* model)
     air_actual_vapor_pressure_Pa=model->et_forcing.specific_humidity_2m_kg_per_kg*model->et_forcing.air_pressure_Pa/0.622;
     if(air_actual_vapor_pressure_Pa > air_saturation_vapor_pressure_Pa)
     {
-    // this is bad.   Actual vapor pressure of air should not be higher than saturated value.
-    // warn and reset to something meaningful
-    fprintf(stderr,"Invalid value of specific humidity with no supplied rel. humidity in ET calc. function:\n");
-    fprintf(stderr,"Relative Humidity: %lf percent\n",model->et_forcing.relative_humidity_percent);
-    fprintf(stderr,"Specific Humidity: %lf kg/kg\n",model->et_forcing.specific_humidity_2m_kg_per_kg);
-    air_actual_vapor_pressure_Pa=0.65*air_saturation_vapor_pressure_Pa;
+      // this is bad.   Actual vapor pressure of air should not be higher than saturated value.
+      // warn and reset to something meaningful
+      fprintf(stderr,"Invalid value of specific humidity with no supplied rel. humidity in ET calc. function:\n");
+      fprintf(stderr,"Relative Humidity: %lf percent\n",model->et_forcing.relative_humidity_percent);
+      fprintf(stderr,"Specific Humidity: %lf kg/kg\n",model->et_forcing.specific_humidity_2m_kg_per_kg);
+      air_actual_vapor_pressure_Pa=0.65*air_saturation_vapor_pressure_Pa;
     }
   }
   

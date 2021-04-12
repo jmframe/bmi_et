@@ -24,32 +24,33 @@ extern void free_et_model(et_model *model) {
     // TODO: ******************
 }
 
+// ######################    RUN    ########    RUN    ########    RUN    ########    RUN    #################################
+// ######################    RUN    ########    RUN    ########    RUN    ########    RUN    #################################
+// ######################    RUN    ########    RUN    ########    RUN    ########    RUN    #################################
+// ######################    RUN    ########    RUN    ########    RUN    ########    RUN    #################################
 extern int run(et_model* model)
-
 {
 
   // populate the evapotranspiration forcing data structure:
   //---------------------------------------------------------------------------------------------------------------
-//  model->et_forcing.air_temperature_C             = (double)model->aorc.air_temperature_2m_K-TK;  // gotta convert it to C
-  model->et_forcing.air_temperature_C = model->forcing_data_air_temperature_2m_K[model->bmi.current_step] - TK;  // gotta convert it to C
-
+  model->et_forcing.air_temperature_C = model->forcing_data_air_temperature_2m_K[model->bmi.current_step] - TK;//convert to C
   model->et_forcing.relative_humidity_percent     = (double)-99.9; // this negative number means use specific humidity
-
-//  model->et_forcing.specific_humidity_2m_kg_per_kg= (double)model->aorc.specific_humidity_2m_kg_per_kg;
   model->et_forcing.specific_humidity_2m_kg_per_kg = model->forcing_data_precip_kg_per_m2[model->bmi.current_step];
-  
-  model->et_forcing.air_pressure_Pa               = model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
-  model->et_forcing.wind_speed_m_per_s            = hypot(model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step],
-                                                          model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step]);                 
+  model->et_forcing.air_pressure_Pa    = model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
+  model->et_forcing.wind_speed_m_per_s = hypot(model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step],
+                                         model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step]);                 
 
   if(model->et_options.yes_aorc==1)
   {
-    if (model->bmi.verbose >=1)
+    if (model->bmi.verbose >1)
         printf("YES AORC \n");
     model->aorc.incoming_longwave_W_per_m2     =  model->forcing_data_incoming_longwave_W_per_m2[model->bmi.current_step];
     model->aorc.incoming_shortwave_W_per_m2    =  model->forcing_data_incoming_shortwave_W_per_m2[model->bmi.current_step];
     model->aorc.surface_pressure_Pa            =  model->forcing_data_surface_pressure_Pa[model->bmi.current_step];
     model->aorc.specific_humidity_2m_kg_per_kg =  model->forcing_data_specific_humidity_2m_kg_per_kg[model->bmi.current_step];
+    // jframe: not sure if this belongs here or not, but it needs to happen somewhere.
+    model->et_forcing.specific_humidity_2m_kg_per_kg =  model->aorc.specific_humidity_2m_kg_per_kg;
+
     model->aorc.air_temperature_2m_K           =  model->forcing_data_air_temperature_2m_K[model->bmi.current_step];
     model->aorc.u_wind_speed_10m_m_per_s       =  model->forcing_data_u_wind_speed_10m_m_per_s[model->bmi.current_step];
     model->aorc.v_wind_speed_10m_m_per_s       =  model->forcing_data_v_wind_speed_10m_m_per_s[model->bmi.current_step];
@@ -87,6 +88,8 @@ extern int run(et_model* model)
   // we must calculate the net radiation before calling the ET subroutine.
   if(model->et_options.use_aerodynamic_method==0) 
   {
+    if (model->bmi.verbose > 1)
+      printf("calculate the net radiation before calling the ET subroutine");
     // NOTE don't call this function use_aerodynamic_method option is TRUE
     model->et_forcing.net_radiation_W_per_sq_m=calculate_net_radiation_W_per_sq_m(model);
   }
@@ -102,18 +105,28 @@ extern int run(et_model* model)
   if(model->et_options.use_penman_monteith_method ==1)
     model->et_m_per_s=evapotranspiration_penman_monteith_method(model);
 
-  if(model->et_options.use_energy_balance_method ==1)   printf("energy balance method:\n");
-  if(model->et_options.use_aerodynamic_method ==1)      printf("aerodynamic method:\n");
-  if(model->et_options.use_combination_method ==1)      printf("combination method:\n");
-  if(model->et_options.use_priestley_taylor_method ==1) printf("Priestley-Taylor method:\n");
-  if(model->et_options.use_penman_monteith_method ==1)  printf("Penman Monteith method:\n");
-                                                 
-  printf("calculated instantaneous potential evapotranspiration (PET) =%8.6e m/s\n",model->et_m_per_s);
-  //printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",model->et_m_per_s*86400.0*1000.0);
+  if (model->bmi.verbose >=1){
+    printf("\n");
+    printf("_______________________________________________________________________________\n");
+    if(model->et_options.use_energy_balance_method ==1)   printf("energy balance method:\n");
+    if(model->et_options.use_aerodynamic_method ==1)      printf("aerodynamic method:\n");
+    if(model->et_options.use_combination_method ==1)      printf("combination method:\n");
+    if(model->et_options.use_priestley_taylor_method ==1) printf("Priestley-Taylor method:\n");
+    if(model->et_options.use_penman_monteith_method ==1)  printf("Penman Monteith method:\n");
+
+    printf("calculated instantaneous potential evapotranspiration (PET) =%8.6e m/s\n",model->et_m_per_s);
+    if (model->bmi.verbose > 1)
+      printf("calculated instantaneous potential evapotranspiration (PET) =%8.6lf mm/d\n",model->et_m_per_s*86400.0*1000.0);
   
+  }
+
   return 0;
 }
 
+//########################    SETUP    ########    SETUP    ########    SETUP    ########################################
+//########################    SETUP    ########    SETUP    ########    SETUP    ########################################
+//########################    SETUP    ########    SETUP    ########    SETUP    ########################################
+//########################    SETUP    ########    SETUP    ########    SETUP    ########################################
 void et_setup(et_model* model, int et_method_option)
 {
 
@@ -138,11 +151,9 @@ void et_setup(et_model* model, int et_method_option)
     model->et_options.use_penman_monteith_method  = 1;
 
   //###################################################################################################
-  // MAKE UP SOME TYPICAL AORC DATA.  THESE VALUES DRIVE THE UNIT TESTS.
-  //###################################################################################################
-  //read_aorc_data().  TODO: These data come from some aorc reading/parsing function.
-  //---------------------------------------------------------------------------------------------------------------
-
+  // These data now come from aorc reading/parsing function.
+  
+  /*
   model->aorc.incoming_longwave_W_per_m2     =  117.1;
   model->aorc.incoming_shortwave_W_per_m2    =  599.7;
   model->aorc.surface_pressure_Pa            =  101300.0;
@@ -153,7 +164,7 @@ void et_setup(et_model* model, int et_method_option)
   model->aorc.latitude                       =  37.865211;
   model->aorc.longitude                      =  -98.12345;
   model->aorc.time                           =  111111112;
-
+*/
 
   // populate the evapotranspiration forcing data structure:
   // this part of code does not explicitly setting values, moved to et_wrapper_function()
@@ -201,12 +212,6 @@ void et_setup(et_model* model, int et_method_option)
     model->surf_rad_forcing.atmospheric_turbidity_factor =   2.0;   // 2.0 = clear mountain air, 5.0= smoggy air
     model->surf_rad_forcing.day_of_year                  =  208;    // THESE VALUES ARE FOR THE UNIT TEST
     model->surf_rad_forcing.zulu_time                  =  20.567; // THESE VALUES ARE FOR THE UNIT TEST
-
-    if(model->et_options.use_energy_balance_method ==1)   printf("energy balance method:\n");
-    if(model->et_options.use_aerodynamic_method ==1)      printf("aerodynamic method:\n");
-    if(model->et_options.use_combination_method ==1)      printf("combination method:\n");
-    if(model->et_options.use_priestley_taylor_method ==1) printf("Priestley-Taylor method:\n");
-    if(model->et_options.use_penman_monteith_method ==1)  printf("Penman Monteith method:\n");
   
     // UNIT TEST RESULTS
     // CALCULATED SOLAR FLUXES
@@ -245,7 +250,6 @@ void et_unit_tests(et_model* model)
   printf("\n #-----------       UNIT TEST    ---------------# \n");
   printf("solar local hour angle is %lf degrees,\n and should be: 31.01549773 degrees \n",
       model->solar_results.solar_local_hour_angle_degrees);
-  
   printf("\n #-----------       UNIT TEST    ---------------# \n");
   if (model->et_options.use_energy_balance_method == 1)
       printf("potential ET is %8.6e m/s,\n and should be: 8.594743e-08 m/s \n", model->et_m_per_s);
@@ -259,6 +263,8 @@ void et_unit_tests(et_model* model)
       printf("potential ET is %8.6e m/s,\n and should be: 1.106268e-08 m/s \n", model->et_m_per_s);
 
   printf("\n #------------  END UNIT TESTS   ---------------# \n");
+  printf("\n");
+  printf("\n");
   return;
 }
 
