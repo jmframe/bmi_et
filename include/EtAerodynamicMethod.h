@@ -37,6 +37,9 @@ double evapotranspiration_aerodynamic_method(et_model *model)
 
   if( model->et_options.use_penman_monteith_method == FALSE)  // we don't use this term in Penman-Monteith method
   {
+    if (model->bmi.verbose >1)
+      printf("Use Penman Monteith method is FALSE\n");
+
     // This is equation 3.5.16 from Chow, Maidment, and Mays textbook.
     mass_flux = 0.622*von_karman_constant_squared*moist_air_density_kg_per_m3*      // kg per sq. meter per sec.
                 vapor_pressure_deficit_Pa*model->et_forcing.wind_speed_m_per_s/

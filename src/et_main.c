@@ -56,7 +56,7 @@ extern int run(et_model* model)
   model->et_forcing.air_pressure_Pa               = (double)model->aorc.surface_pressure_Pa;
   model->et_forcing.wind_speed_m_per_s            = hypot((double)model->aorc.u_wind_speed_10m_m_per_s,
                                                    (double)model->aorc.v_wind_speed_10m_m_per_s);                 
-
+  
   if(model->et_options.yes_aorc==TRUE)
   {
     // wind speed was measured at 10.0 m height, so we need to calculate the wind speed at 2.0m

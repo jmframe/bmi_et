@@ -11,6 +11,7 @@
 int 
 main(int argc, const char *argv[])
 {
+
   if(argc<=1){
     printf("make sure to include an ET Type between 1 - 5\n");
     exit(1);
@@ -21,7 +22,7 @@ main(int argc, const char *argv[])
   register_bmi_et(model);
 
   int et_method_int = 1*atoi(argv[1]);
-  const char *cfg_file = "/glade/work/jframe/alt-modular/Modules/et-bmi/et_config_unit_test1.txt";
+  const char *cfg_file = "./configs/et_config_unit_test1.txt";
   model->initialize(model, et_method_int, cfg_file);
   
   model->update(model);
@@ -34,6 +35,7 @@ main(int argc, const char *argv[])
 static int 
 Initialize (Bmi *self, int et_method_int, const char *cfg_file)
 {
+    
     et_model *et;
     et = (et_model *) self->data;
 
@@ -43,6 +45,9 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
         return BMI_FAILURE;
 
     et_setup(et, et_method_int);
+
+    if (et->bmi.verbose >1)
+        printf("BMI Initialization ET ... setup just finished \n");
     
     // Figure out the number of lines first (also char count)
     int forcing_line_count, max_forcing_line_length;
@@ -87,28 +92,28 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
         fgets(line_str, max_forcing_line_length + 1, ffp);  // read in a line of AORC data.
         parse_aorc_line(line_str, &year, &month, &day, &hour, &minute, &dsec, &forcings);
         et->forcing_data_precip_kg_per_m2[i] = forcings.precip_kg_per_m2 * ((float)et->bmi.time_step_size);
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
         et->forcing_data_surface_pressure_Pa[i] = forcings.surface_pressure_Pa;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
         et->forcing_data_incoming_longwave_W_per_m2[i] = forcings.incoming_longwave_W_per_m2;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
         et->forcing_data_incoming_shortwave_W_per_m2[i] = forcings.incoming_shortwave_W_per_m2;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
         et->forcing_data_specific_humidity_2m_kg_per_kg[i] = forcings.specific_humidity_2m_kg_per_kg;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
         et->forcing_data_air_temperature_2m_K[i] = forcings.air_temperature_2m_K;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
         et->forcing_data_u_wind_speed_10m_m_per_s[i] = forcings.u_wind_speed_10m_m_per_s;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
         et->forcing_data_v_wind_speed_10m_m_per_s[i] = forcings.v_wind_speed_10m_m_per_s;
-        if (et->bmi.verbose >=1)
+        if (et->bmi.verbose >=2)
             printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
 
 
@@ -127,14 +132,14 @@ static int
 Update (Bmi *self)
 {
     et_model *et = (et_model *) self->data;
+  
+    if (et->bmi.verbose >1)
+      printf("BMI Update ET ...\n");
+  
     run(et);
 
     et->bmi.current_time_step += et->bmi.time_step_size;
     et->bmi.current_step +=1;
-
-    // Perform Unit Tests, if set in config file.
-    if (et->bmi.verbose > 1)
-      et_unit_tests(et);
 
     return BMI_SUCCESS;
 }
@@ -151,6 +156,12 @@ new_bmi_et()
 static int 
 Finalize (Bmi *self)
 {
+
+  // Perform Unit Tests, if set in config file.
+  et_model *et = (et_model *) self->data;
+  if (et->bmi.run_unit_tests == 1)
+    et_unit_tests(et);
+
   if (self){
     et_model* model = (et_model *)(self->data);
     self->data = (void*)new_bmi_et();
@@ -350,16 +361,16 @@ int read_init_config(const char* config_file, et_model* model)//,
 
         if (strcmp(param_key, "verbose") == 0){
             model->bmi.verbose = strtod(param_value, NULL);
-            if(model->bmi.verbose == 1){
-                printf("printing some stuff (level 1) for unit tests and troubleshooting \n");
-            }
             if(model->bmi.verbose > 1){
-                printf("printing a lot of stuff (level >1) for unit tests and troubleshooting \n");
+                printf("printing some stuff (level > 1) for unit tests and troubleshooting \n");
+            }
+            if(model->bmi.verbose > 2){
+                printf("printing a lot of stuff (level > 2) for unit tests and troubleshooting \n");
             }
         }
         if (strcmp(param_key, "yes_aorc") == 0) {
             model->et_options.yes_aorc = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("set aorc boolean from config file \n");
                 printf("%d\n", model->et_options.yes_aorc);
             }
@@ -367,7 +378,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "forcing_file") == 0) {
             model->forcing_file = strdup(param_value);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("set forcing file from config file \n");
                 printf("%s\n", model->forcing_file);
             }
@@ -375,7 +386,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "wind_speed_measurement_height_m") == 0) {
             model->et_params.wind_speed_measurement_height_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("set wind speed measurement height from config file \n");
                 printf("%lf\n", model->et_params.wind_speed_measurement_height_m);
             }
@@ -383,7 +394,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "humidity_measurement_height_m") == 0) {
             model->et_params.humidity_measurement_height_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("set humidity measurement height from config file \n");
                 printf("%lf\n", model->et_params.humidity_measurement_height_m);
             }
@@ -391,7 +402,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "vegetation_height_m") == 0) {
             model->et_params.vegetation_height_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("vegetation height from config file \n");
                 printf("%lf\n", model->et_params.vegetation_height_m);
             }
@@ -399,7 +410,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "zero_plane_displacement_height_m") == 0) {
             model->et_params.zero_plane_displacement_height_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("zero_plane_displacement height from config file \n");
                 printf("%lf\n", model->et_params.zero_plane_displacement_height_m);
             }
@@ -407,7 +418,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "shortwave_radiation_provided") == 0) {
             model->et_options.shortwave_radiation_provided = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("shortwave radiation provided boolean from config file \n");
                 printf("%d\n", model->et_options.shortwave_radiation_provided);
             }
@@ -415,7 +426,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "momentum_transfer_roughness_length_m") == 0) {
             model->et_params.momentum_transfer_roughness_length_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("momentum_transfer_roughness_length_m from config file \n");
                 printf("%lf\n", model->et_params.momentum_transfer_roughness_length_m);
             }
@@ -423,7 +434,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "surface_longwave_emissivity") == 0) {
             model->surf_rad_params.surface_longwave_emissivity = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("surface_longwave_emissivity from config file \n");
                 printf("%lf\n", model->surf_rad_params.surface_longwave_emissivity);
             }
@@ -431,7 +442,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
             model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("surface_shortwave_albedo from config file \n");
                 printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
             }
@@ -439,7 +450,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "surface_shortwave_albedo") == 0) {
             model->surf_rad_params.surface_shortwave_albedo = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("surface_shortwave_albedo from config file \n");
                 printf("%lf\n", model->surf_rad_params.surface_shortwave_albedo);
             }
@@ -447,7 +458,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "latitude_degrees") == 0) {
             model->solar_params.latitude_degrees = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("latitude_degrees from config file \n");
                 printf("%lf\n", model->solar_params.latitude_degrees);
             }
@@ -455,7 +466,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "longitude_degrees") == 0) {
             model->solar_params.longitude_degrees = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("longitude_degrees from config file \n");
                 printf("%lf\n", model->solar_params.longitude_degrees);
             }
@@ -463,7 +474,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "site_elevation_m") == 0) {
             model->solar_params.site_elevation_m = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("site_elevation_m from config file \n");
                 printf("%lf\n", model->solar_params.site_elevation_m);
             }
@@ -471,7 +482,7 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "time_step_size") == 0) {
             model->bmi.time_step_size = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("time_step_size from config file \n");
                 printf("%d\n", model->bmi.time_step_size);
             }
@@ -479,9 +490,16 @@ int read_init_config(const char* config_file, et_model* model)//,
         }
         if (strcmp(param_key, "num_timesteps") == 0) {
             model->bmi.num_timesteps = strtod(param_value, NULL);
-            if(model->bmi.verbose > 1){
+            if(model->bmi.verbose >=2){
                 printf("num_timesteps from config file \n");
                 printf("%d\n", model->bmi.num_timesteps);
+            }
+            continue;
+        }
+        if (strcmp(param_key, "run_unit_tests") == 0) {
+            model->bmi.run_unit_tests = strtod(param_value, NULL);
+            if(model->bmi.verbose >=2){
+                printf("Running unit tests \n");
             }
             continue;
         }
