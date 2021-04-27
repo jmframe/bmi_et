@@ -1,5 +1,5 @@
 #!/bin/bash
-gcc -o run_mod ./src/et_main.c
+gcc -o run_mod ./src_mod/et_main.c
 ./run_mod 1
 ./run_mod 2
 ./run_mod 3
