@@ -92,7 +92,7 @@ struct aorc_forcing_data
   float v_wind_speed_10m_m_per_s;        // V-component of Wind at 10m height, m/s                 | VGRD_10maboveground
   float latitude;                        // degrees north of the equator.  Negative south          | latitude
   float longitude;                       // degrees east of prime meridian. Negative west          | longitude
-  long int time; //TODO: type?           // seconds since 1970-01-01 00:00:00.0 0:00               | time
+  double time; //TODO: type?           // seconds since 1970-01-01 00:00:00.0 0:00               | time
 };
 typedef struct aorc_forcing_data aorc_forcing_data;
 
@@ -213,9 +213,10 @@ struct intermediate_vars
 struct bmi
 {
   int time_step_size;
-  int num_timesteps;
-  int current_time_step;   // this is the actual time of the run.
-  int current_step;        //this is a sequential value to find the correct row from forcing file
+  long int num_timesteps;
+  double current_time_step;   // this is the actual time of the run.
+  long int current_step;        // this is a sequential value to find the correct row from forcing file
+  double current_time;        // this should be in "Seconds since 1970", so should be start time plus current time step
   int verbose;
   int run_unit_tests;
 };
@@ -234,7 +235,7 @@ struct et_model{
   //aorc_forcing_data* forcings;
   double* forcing_data_precip_kg_per_m2;
   double* forcing_data_surface_pressure_Pa;
-  long* forcing_data_time;
+  double* forcing_data_time;
   double* forcing_data_incoming_longwave_W_per_m2 ;     // Downward Long-Wave Rad. Flux at 0m height, W/m^2       | DLWRF_surface
   double* forcing_data_incoming_shortwave_W_per_m2;     // Downward Short-Wave Radiation Flux at 0m height, W/m^2 | DSWRF_surface
   double* forcing_data_specific_humidity_2m_kg_per_kg;  // Specific Humidity at 2m height, kg/kg                  | SPFH_2maboveground
@@ -267,7 +268,7 @@ extern void free_et_model(et_model *model);
 
 extern int run(et_model* model);
 
-void et_setup(et_model* model, int et_method_option);
+void et_setup(et_model* model);
 void et_unit_tests(et_model* model);
 
 /**************************************************************************/
