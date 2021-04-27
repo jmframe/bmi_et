@@ -48,7 +48,7 @@ typedef struct Bmi {
     void *data;
 
     /* Initialize, run, finalize (IRF) */
-    int (*initialize)(struct Bmi *self, int et_method_int, const char *config_file);
+    int (*initialize)(struct Bmi *self, const char *config_file);
 
     int (*update)(struct Bmi *self);
 

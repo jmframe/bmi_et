@@ -8,12 +8,12 @@
 #define INPUT_VAR_NAME_COUNT 7 // All the forcings? 
 #define OUTPUT_VAR_NAME_COUNT 1 // et_m_per_s; 
 
-int 
-main(int argc, const char *argv[])
+int
+ main(int argc, const char *argv[])
 {
 
   if(argc<=1){
-    printf("make sure to include an ET Type between 1 - 5\n");
+    printf("make sure to include a path to the config file\n");
     exit(1);
   }
   
@@ -21,11 +21,13 @@ main(int argc, const char *argv[])
 
   register_bmi_et(model);
 
-  int et_method_int = 1*atoi(argv[1]);
-  const char *cfg_file = "./configs/et_config_unit_test1.txt";
-  model->initialize(model, et_method_int, cfg_file);
+  const char *cfg_file = argv[1];
+  model->initialize(model, cfg_file);
   
   model->update(model);
+
+  // jmframe troubleshooting, please delete this printout
+//  model->update_until(model, 3);
   
   model->finalize(model);
   
@@ -33,18 +35,17 @@ main(int argc, const char *argv[])
 }
 
 static int 
-Initialize (Bmi *self, int et_method_int, const char *cfg_file)
+Initialize (Bmi *self, const char *cfg_file)
 {
     
     et_model *et;
     et = (et_model *) self->data;
 
-    //int config_read_result = read_init_config(cfg_file, self->data);
-    int config_read_result = read_init_config(cfg_file, et);
+    int config_read_result = read_init_config(et, cfg_file);
     if (config_read_result == BMI_FAILURE)
         return BMI_FAILURE;
 
-    et_setup(et, et_method_int);
+    et_setup(et);
 
     if (et->bmi.verbose >1)
         printf("BMI Initialization ET ... setup just finished \n");
@@ -86,34 +87,38 @@ Initialize (Bmi *self, int et_method_int, const char *cfg_file)
     double dsec;
     // First read the header line
     fgets(line_str, max_forcing_line_length + 1, ffp);
-    
+
+    if (et->bmi.verbose > 2) 
+        //jmframe troubleshooting, delete this:
+        printf("the number of time steps from the forcing file is: %8.6e \n", et->bmi.num_timesteps);
+
     aorc_forcing_data forcings;
     for (int i = 0; i < et->bmi.num_timesteps; i++) {
         fgets(line_str, max_forcing_line_length + 1, ffp);  // read in a line of AORC data.
         parse_aorc_line(line_str, &year, &month, &day, &hour, &minute, &dsec, &forcings);
         et->forcing_data_precip_kg_per_m2[i] = forcings.precip_kg_per_m2 * ((float)et->bmi.time_step_size);
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("precip %f \n", et->forcing_data_precip_kg_per_m2[i]);
         et->forcing_data_surface_pressure_Pa[i] = forcings.surface_pressure_Pa;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("surface pressure %f \n", et->forcing_data_surface_pressure_Pa[i]);
         et->forcing_data_incoming_longwave_W_per_m2[i] = forcings.incoming_longwave_W_per_m2;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("longwave %f \n", et->forcing_data_incoming_longwave_W_per_m2[i]);
         et->forcing_data_incoming_shortwave_W_per_m2[i] = forcings.incoming_shortwave_W_per_m2;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("shortwave %f \n", et->forcing_data_incoming_shortwave_W_per_m2[i]);
         et->forcing_data_specific_humidity_2m_kg_per_kg[i] = forcings.specific_humidity_2m_kg_per_kg;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("humidity %f \n", et->forcing_data_specific_humidity_2m_kg_per_kg[i]);
         et->forcing_data_air_temperature_2m_K[i] = forcings.air_temperature_2m_K;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("air temperature %f \n", et->forcing_data_air_temperature_2m_K[i]);
         et->forcing_data_u_wind_speed_10m_m_per_s[i] = forcings.u_wind_speed_10m_m_per_s;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("u wind speed %f \n", et->forcing_data_u_wind_speed_10m_m_per_s[i]);
         et->forcing_data_v_wind_speed_10m_m_per_s[i] = forcings.v_wind_speed_10m_m_per_s;
-        if (et->bmi.verbose >=2)
+        if (et->bmi.verbose >=4)
             printf("v wind speed %f \n", et->forcing_data_v_wind_speed_10m_m_per_s[i]);
 
 
@@ -142,6 +147,114 @@ Update (Bmi *self)
     et->bmi.current_step +=1;
 
     return BMI_SUCCESS;
+}
+
+static int
+Update_until(Bmi *self, double t)
+{
+
+    et_model* et = ((et_model *) self->data);
+    
+    // Since this model's time units are seconds, it is assumed that the param is either a valid time in seconds, a
+    // relative number of time steps into the future, or invalid
+
+    if (et->bmi.verbose >= 1)
+        printf("running update until time %lld \n", t);
+
+    // Don't support negative parameter values
+    if (t < 0.0)
+        return BMI_FAILURE;
+
+    // jmframe troubleshooting. Please delete this printout
+    printf("t is greater than zero, please delete this printout\n");
+
+    // Don't continue if current time is at or beyond end time (or we can't determine this)
+    double current_time = et->bmi.current_time_step;
+    double end_time = 0;
+    int current_time_result = self->get_current_time(self, &current_time);
+    if (current_time_result == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    // jmframe troubleshooting. Please delete this printout
+    printf("passed current time result, please delete this printout\n");
+
+    int end_time_result = self->get_end_time(self, &end_time);
+
+    // jmframe troubleshooting. Please delete this printout
+    printf("end time %8.6e, please delete this printout\n", &end_time);
+    printf("the current time is %8.6e \n", current_time);
+    printf("the end time result is %d \n", end_time_result);
+
+    if (end_time_result == BMI_FAILURE || current_time >= end_time){
+        printf("BMI Failued due to end_time_result OR current time greater than end time \n");
+        if (end_time_result == BMI_FAILURE)
+            printf("end_time_result failed %s \n");
+        if (current_time >= end_time)
+            printf("current_time %8.6e is greater than end time %8.6e \n", current_time, end_time);
+        return BMI_FAILURE;
+    }
+
+    // jmframe troubleshooting. Please delete this printout
+    printf("passed end time result, please delete this printout\n");
+
+    // Handle easy case of t == current_time by just returning success
+    if (t == current_time)
+        return BMI_SUCCESS;
+
+    // jmframe troubleshooting. Please delete this printout
+    printf("About to extract future time, please delete this printout\n");
+
+    // First, determine if t is some future time that will be arrived at exactly after some number of future time steps
+    int is_exact_future_time = (t == end_time) ? TRUE : FALSE;
+    // Compare to time step endings unless obvious that t lines up (i.e., t == end_time) or doesn't (t <= current_time)
+    if (is_exact_future_time == FALSE && t > current_time) {
+        int future_time_step = et->bmi.current_time_step;
+        double future_time_step_time = current_time;
+        while (future_time_step < et->bmi.num_timesteps && future_time_step_time < end_time) {
+            future_time_step_time += et->bmi.time_step_size;
+            if (future_time_step_time == t) {
+                is_exact_future_time = TRUE;
+                break;
+            }
+        }
+    }
+
+    // jmframe troubleshooting. Please delete
+    printf("Extracted future time, please delete this printout\n");
+
+    // If it is an exact time, advance to that time step
+    if (is_exact_future_time == TRUE) {
+        while (current_time < t) {
+            run(et);
+            self->get_current_time(self, &current_time);
+        }
+        return BMI_SUCCESS;
+    }
+
+    // jmframe troubleshooting. Please delete
+    printf("Checked if exact time, please delete this printout \n");
+
+    // If t is not an exact time, it could be a number of time step forward to proceed
+
+    // The model doesn't support partial time step value args (i.e., fractions)
+    int t_int = (int) t;
+    if ((t - ((double)t_int)) != 0)
+        return BMI_FAILURE;
+
+    // jmframe troubleshooting. Please delete
+    printf("Checked setting t_int to t, please delete this line \n");
+
+    // Keep in mind the current_time_step hasn't been processed yet (hence, using <= for this test)
+    // E.g., if (unprocessed) current_time_step = 0, t = 2, num_timesteps = 2, this is valid a valid t (run 0, run 1)
+    if ((et->bmi.current_time_step + t_int) <= et->bmi.num_timesteps) {
+        for (int i = 0; i < t_int; i++)
+            run(et);
+        return BMI_SUCCESS;
+    }
+
+    // If we arrive here, t wasn't an exact time at end of a time step or a valid relative time step jump, so invalid.
+    return BMI_FAILURE;
+    
 }
 
 et_model *
@@ -173,6 +286,8 @@ Finalize (Bmi *self)
 static int 
 Get_start_time (Bmi *self, double * time)
 {
+    // TODO: Get the real starting time, not zero. 
+    // jmframe: I think this should be the time of the first line in the forcing file. In seconds since 1970
     *time = 0.0;
     return BMI_SUCCESS;
 }
@@ -236,9 +351,23 @@ static const char *input_var_units[INPUT_VAR_NAME_COUNT] = {
 
 static int Get_end_time (Bmi *self, double * time)
 {
+  //jmframe: this is for troubleshooting, delete this printout
+  printf("time before calling get start time: %8.6e , delete this printout when done\n", time);
+  printf("time before calling get start time: %8.6e , delete this printout when done\n", *time);
+  
   Get_start_time(self, time);
+
+  //jmframe: this is for troubleshooting, delete this printout
+  printf("this should be the start time: %8.6e, delete this printout when done\n", time);
+  printf("this should be the start time: %8.6e , delete this printout when done\n", *time);
+
   *time += (((et_model *) self->data)->bmi.num_timesteps * 
             ((et_model *) self->data)->bmi.time_step_size);
+
+  //jmframe: this is for troubleshooting, delete this printout
+  printf("this should be the end time: %8.6e , delete this printout when done\n", time);
+  printf("this should be the end time: %8.6e , delete this printout when done\n", *time);
+
   return BMI_SUCCESS;
 }
 
@@ -262,9 +391,9 @@ static int Get_time_units (Bmi *self, char * units)
 static int Get_current_time (Bmi *self, double * time)
 {
     Get_start_time(self, time);
-#if ET_DEGUG > 1
-    printf("Current model time step: '%d'\n", ((et_model *) self->data)->bmi.current_time_step);
-#endif
+    if (((et_model *) self->data)->bmi.verbose > 2){
+        printf("Current model time step: '%lld'\n", ((et_model *) self->data)->bmi.current_time_step);
+    }
     *time += (((et_model *) self->data)->bmi.current_time_step * 
               ((et_model *) self->data)->bmi.time_step_size);
     return BMI_SUCCESS;
@@ -334,7 +463,7 @@ int read_file_line_counts(const char* file_name, int* line_count, int* max_line_
 }  // end: read_file_line_counts
 
 //---------------------------------------------------------------------------------------------------------------------
-int read_init_config(const char* config_file, et_model* model)//,
+int read_init_config(et_model* model, const char* config_file)//,
 {
     int config_line_count, max_config_line_length;
     // Note that this determines max line length including the ending return character, if present
@@ -366,6 +495,13 @@ int read_init_config(const char* config_file, et_model* model)//,
             }
             if(model->bmi.verbose > 2){
                 printf("printing a lot of stuff (level > 2) for unit tests and troubleshooting \n");
+            }
+        }
+        if (strcmp(param_key, "et_method") == 0){
+            model->et_method = strtod(param_value, NULL);
+            if(model->bmi.verbose > 1){
+                printf("set ET method from config file \n");
+                printf("%d\n", model->et_method);
             }
         }
         if (strcmp(param_key, "yes_aorc") == 0) {
@@ -573,10 +709,13 @@ register_bmi_et(Bmi *model)
         model->data = (void*)new_bmi_et();
         model->initialize = Initialize;
         model->update = Update;
+        model->update_until = Update_until;
         model->finalize = Finalize;
         model->get_start_time = Get_start_time;
         model->get_var_type = Get_var_type;
         model->get_var_itemsize = Get_var_itemsize;
+        model->get_current_time = Get_current_time;
+        model->get_end_time = Get_end_time;
     }
 
     return model;

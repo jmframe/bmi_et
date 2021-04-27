@@ -127,27 +127,26 @@ extern int run(et_model* model)
 //########################    SETUP    ########    SETUP    ########    SETUP    ########################################
 //########################    SETUP    ########    SETUP    ########    SETUP    ########################################
 //########################    SETUP    ########    SETUP    ########    SETUP    ########################################
-void et_setup(et_model* model, int et_method_option)
+void et_setup(et_model* model)
 {
 
   //##########################################################
   // THE VALUE OF THESE FLAGS DETERMINE HOW THIS CODE BEHAVES.
   //##########################################################
-  model->et_method = et_method_option;
   model->et_options.use_energy_balance_method   = 0;
   model->et_options.use_aerodynamic_method      = 0;
   model->et_options.use_combination_method      = 0;
   model->et_options.use_priestley_taylor_method = 0;
   model->et_options.use_penman_monteith_method  = 0;
-  if (et_method_option == 1)
+  if (model->et_method == 1)
     model->et_options.use_energy_balance_method   = 1;
-  if (et_method_option == 2)
+  if (model->et_method == 2)
     model->et_options.use_aerodynamic_method      = 1;
-  if (et_method_option == 3)
+  if (model->et_method == 3)
     model->et_options.use_combination_method      = 1;
-  if (et_method_option == 4)
+  if (model->et_method == 4)
     model->et_options.use_priestley_taylor_method = 1;
-  if (et_method_option == 5)
+  if (model->et_method == 5)
     model->et_options.use_penman_monteith_method  = 1;
 
   //###################################################################################################
