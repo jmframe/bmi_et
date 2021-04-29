@@ -42,6 +42,13 @@ int
   
   model->finalize(model);
   
+//  model->get_start_time(model);
+//  model->get_var_type(model);
+//  model->get_var_location(model);
+//  model->get_var_itemsize(model);
+//  model->get_current_timee(model);
+//  model->get_end_time(model);
+
   return 0;
 }
 
@@ -358,6 +365,31 @@ static const int output_var_item_count[OUTPUT_VAR_NAME_COUNT] = {
 static const char *output_var_units[OUTPUT_VAR_NAME_COUNT] = {
   "m s-1",
 };
+
+//---------------------------------------------------------------------------------------------------------------------
+static const int output_var_grids[OUTPUT_VAR_NAME_COUNT] = {
+        0,
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+static const char *output_var_locations[OUTPUT_VAR_NAME_COUNT] = {
+        "node",
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+static const int input_var_item_count[INPUT_VAR_NAME_COUNT] = {
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+static const char input_var_grids[INPUT_VAR_NAME_COUNT] = {
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+static const char *input_var_locations[INPUT_VAR_NAME_COUNT] = {
+};
+
+
+
 
 //---------------------------------------------------------------------------------------------------------------------
 // Don't forget to update Get_value/Get_value_at_indices 
@@ -736,7 +768,181 @@ static int Get_var_itemsize (Bmi *self, const char *name, int * size)
     }
 }
 
+
+
 //---------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_var_location (Bmi *self, const char *name, char * location)
+{
+    // Check to see if in output array first
+    for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, output_var_names[i]) == 0) {
+            strncpy(location, output_var_locations[i], BMI_MAX_LOCATION_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // Then check to see if in input array
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, input_var_names[i]) == 0) {
+            strncpy(location, input_var_locations[i], BMI_MAX_LOCATION_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // If we get here, it means the variable name wasn't recognized
+    location[0] = '\0';
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_var_grid(Bmi *self, const char *name, int *grid)
+{
+
+    // Check to see if in output array first
+    for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, output_var_names[i]) == 0) {
+            *grid = output_var_grids[i];
+            return BMI_SUCCESS;
+        }
+    }
+    // Then check to see if in input array
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, input_var_names[i]) == 0) {
+            *grid = input_var_grids[i];
+            return BMI_SUCCESS;
+        }
+    }
+    // If we get here, it means the variable name wasn't recognized
+    grid[0] = '\0';
+    return BMI_FAILURE;
+}
+
+// ***********************************************************
+// **************** BMI: MODEL GRID FUNCTIONS ****************
+// ***********************************************************
+/* Grid information */
+static int Get_grid_rank (Bmi *self, int grid, int * rank)
+{
+    if (grid == 0) {
+        *rank = 1;
+        return BMI_SUCCESS;
+    }
+    else {
+        *rank = -1;
+        return BMI_FAILURE;
+    }
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_size(Bmi *self, int grid, int * size)
+{
+    if (grid == 0) {
+        *size = 1;
+        return BMI_SUCCESS;
+    }
+    else {
+        *size = -1;
+        return BMI_FAILURE;
+    }
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_type (Bmi *self, int grid, char * type)
+{
+    int status = BMI_FAILURE;
+
+    if (grid == 0) {
+        strncpy(type, "scalar", BMI_MAX_TYPE_NAME);
+        status = BMI_SUCCESS;
+    }
+    else {
+        type[0] = '\0';
+        status = BMI_FAILURE;
+    }
+    return status;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+/* Uniform rectilinear (grid type) */
+static int Get_grid_shape(Bmi *self, int grid, int *shape)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_spacing(Bmi *self, int grid, double *spacing)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_origin(Bmi *self, int grid, double *origin)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+/* Non-uniform rectilinear, curvilinear (grid type)*/
+static int Get_grid_x(Bmi *self, int grid, double *x)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_y(Bmi *self, int grid, double *y)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_z(Bmi *self, int grid, double *z)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+/*Unstructured (grid type)*/
+static int Get_grid_node_count(Bmi *self, int grid, int *count)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_edge_count(Bmi *self, int grid, int *count)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_face_count(Bmi *self, int grid, int *count)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_edge_nodes(Bmi *self, int grid, int *edge_nodes)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_face_edges(Bmi *self, int grid, int *face_edges)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_face_nodes(Bmi *self, int grid, int *face_nodes)
+{
+    return BMI_FAILURE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+static int Get_grid_nodes_per_face(Bmi *self, int grid, int *nodes_per_face)
+{
+    return BMI_FAILURE;
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 Bmi* 
 register_bmi_et(Bmi *model)
@@ -747,11 +953,33 @@ register_bmi_et(Bmi *model)
         model->update = Update;
         model->update_until = Update_until;
         model->finalize = Finalize;
-        model->get_start_time = Get_start_time;
+
         model->get_var_type = Get_var_type;
+        model->get_var_grid = Get_var_grid;
         model->get_var_itemsize = Get_var_itemsize;
+        model->get_var_location = Get_var_location;
         model->get_current_time = Get_current_time;
+
+        model->get_start_time = Get_start_time;
         model->get_end_time = Get_end_time;
+
+        model->get_grid_size = Get_grid_size;    
+        model->get_grid_rank = Get_grid_rank;    
+        model->get_grid_type = Get_grid_type;    
+        model->get_grid_shape = Get_grid_shape;
+        model->get_grid_spacing = Get_grid_spacing;
+        model->get_grid_origin = Get_grid_origin;
+        model->get_grid_x = Get_grid_x;
+        model->get_grid_y = Get_grid_y;
+        model->get_grid_z = Get_grid_z;
+        model->get_grid_node_count = Get_grid_node_count;
+        model->get_grid_edge_count = Get_grid_edge_count;
+        model->get_grid_face_count = Get_grid_face_count;
+        model->get_grid_edge_nodes = Get_grid_edge_nodes;
+        model->get_grid_face_edges = Get_grid_face_edges;
+        model->get_grid_face_nodes = Get_grid_face_nodes;
+        model->get_grid_nodes_per_face = Get_grid_nodes_per_face;
+
     }
 
     return model;

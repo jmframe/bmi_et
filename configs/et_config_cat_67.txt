@@ -1,4 +1,4 @@
-verbose=1
+verbose=0
 et_method=2
 forcing_file=./forcing/cat-67_2015.csv
 run_unit_tests=0
