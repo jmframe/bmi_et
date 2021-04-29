@@ -818,6 +818,195 @@ static int Get_var_grid(Bmi *self, const char *name, int *grid)
 }
 
 // ***********************************************************
+// ********* BMI: VARIABLE GETTER & SETTER FUNCTIONS *********
+// ***********************************************************
+static int Get_value_ptr (Bmi *self, const char *name, void **dest)
+{
+    if (strcmp (name, "Qout") == 0) {
+        et_model *et;
+        et = (et_model *) self->data;
+        *dest = (void*)&et-> et_m_per_s;
+        return BMI_SUCCESS;
+    }
+
+    return BMI_FAILURE;
+}
+
+static int Get_value_at_indices (Bmi *self, const char *name, void *dest, int * inds, int len)
+{
+    void *src = NULL;
+    int itemsize = 0;
+
+    if (self->get_value_ptr(self, name, &src) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    if (self->get_var_itemsize(self, name, &itemsize) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    { /* Copy the data */
+        size_t i;
+        size_t offset;
+        char * ptr;
+        for (i=0, ptr=(char*)dest; i<len; i++, ptr+=itemsize) {
+            offset = inds[i] * itemsize;
+            memcpy (ptr, (char*)src + offset, itemsize);
+        }
+    }
+
+    return BMI_SUCCESS;
+}
+
+static int Get_value(Bmi * self, const char * name, void *dest)
+{
+    void *src = NULL;
+    int nbytes = 0;
+
+    if (self->get_value_ptr (self, name, &src) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    if (self->get_var_nbytes (self, name, &nbytes) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    memcpy(dest, src, nbytes);
+
+    return BMI_SUCCESS;
+}
+
+static int Set_value (Bmi *self, const char *name, void *array)
+{
+    void * dest = NULL;
+    int nbytes = 0;
+
+    if (self->get_value_ptr(self, name, &dest) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    if (self->get_var_nbytes(self, name, &nbytes) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    memcpy (dest, array, nbytes);
+
+    return BMI_SUCCESS;
+}
+
+
+static int Set_value_at_indices (Bmi *self, const char *name, int * inds, int len, void *src)
+{
+    void * to = NULL;
+    int itemsize = 0;
+
+    if (self->get_value_ptr (self, name, &to) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    if (self->get_var_itemsize(self, name, &itemsize) == BMI_FAILURE)
+        return BMI_FAILURE;
+
+    { /* Copy the data */
+        size_t i;
+        size_t offset;
+        char * ptr;
+        for (i=0, ptr=(char*)src; i<len; i++, ptr+=itemsize) {
+            offset = inds[i] * itemsize;
+            memcpy ((char*)to + offset, ptr, itemsize);
+        }
+    }
+    return BMI_SUCCESS;
+}
+
+// ***********************************************************
+// ************ BMI: MODEL INFORMATION FUNCTIONS *************
+// ***********************************************************
+static int Get_component_name (Bmi *self, char * name)
+{
+    strncpy (name, "Potential Evapotranspiration", BMI_MAX_COMPONENT_NAME);
+    return BMI_SUCCESS;
+}
+
+//----------------------------------------------------------------------
+static int Get_input_item_count (Bmi *self, int * count)
+{
+    *count = INPUT_VAR_NAME_COUNT;
+    return BMI_SUCCESS;
+}
+
+//----------------------------------------------------------------------
+static int Get_input_var_names (Bmi *self, char ** names)
+{
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        strncpy (names[i], input_var_names[i], BMI_MAX_VAR_NAME);
+    }
+    return BMI_SUCCESS;
+}
+
+//----------------------------------------------------------------------
+static int Get_output_item_count (Bmi *self, int * count)
+{
+    *count = OUTPUT_VAR_NAME_COUNT;
+    return BMI_SUCCESS;
+}
+
+//----------------------------------------------------------------------
+static int Get_output_var_names (Bmi *self, char ** names)
+{
+    for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+        strncpy (names[i], output_var_names[i], BMI_MAX_VAR_NAME);
+    }
+    return BMI_SUCCESS;
+}
+
+//----------------------------------------------------------------------
+static int Get_var_units (Bmi *self, const char *name, char * units)
+{
+    // Check to see if in output array first
+    for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, output_var_names[i]) == 0) {
+            strncpy(units, output_var_units[i], BMI_MAX_UNITS_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // Then check to see if in input array
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, input_var_names[i]) == 0) {
+            strncpy(units, input_var_units[i], BMI_MAX_UNITS_NAME);
+            return BMI_SUCCESS;
+        }
+    }
+    // If we get here, it means the variable name wasn't recognized
+    units[0] = '\0';
+    return BMI_FAILURE;
+}
+
+//----------------------------------------------------------------------
+static int Get_var_nbytes (Bmi *self, const char *name, int * nbytes)
+{
+    int item_size;
+    int item_size_result = Get_var_itemsize(self, name, &item_size);
+    if (item_size_result != BMI_SUCCESS) {
+        return BMI_FAILURE;
+    }
+    int item_count = -1;
+    for (int i = 0; i < INPUT_VAR_NAME_COUNT; i++) {
+        if (strcmp(name, input_var_names[i]) == 0) {
+            item_count = input_var_item_count[i];
+            break;
+        }
+    }
+    if (item_count < 1) {
+        for (int i = 0; i < OUTPUT_VAR_NAME_COUNT; i++) {
+            if (strcmp(name, output_var_names[i]) == 0) {
+                item_count = output_var_item_count[i];
+                break;
+            }
+        }
+    }
+    if (item_count < 1)
+        item_count = ((et_model *) self->data)->bmi.num_timesteps;
+
+    *nbytes = item_size * item_count;
+    return BMI_SUCCESS;
+}
+
+
+// ***********************************************************
 // **************** BMI: MODEL GRID FUNCTIONS ****************
 // ***********************************************************
 /* Grid information */
@@ -833,7 +1022,7 @@ static int Get_grid_rank (Bmi *self, int grid, int * rank)
     }
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------
 static int Get_grid_size(Bmi *self, int grid, int * size)
 {
     if (grid == 0) {
@@ -954,14 +1143,31 @@ register_bmi_et(Bmi *model)
         model->update_until = Update_until;
         model->finalize = Finalize;
 
-        model->get_var_type = Get_var_type;
-        model->get_var_grid = Get_var_grid;
-        model->get_var_itemsize = Get_var_itemsize;
-        model->get_var_location = Get_var_location;
-        model->get_current_time = Get_current_time;
+        model->get_component_name = Get_component_name;
+        model->get_input_item_count = Get_input_item_count;
+        model->get_output_item_count = Get_output_item_count;
+        model->get_input_var_names = Get_input_var_names;
+        model->get_output_var_names = Get_output_var_names;
 
+        model->get_var_grid = Get_var_grid;
+        model->get_var_type = Get_var_type;
+        model->get_var_itemsize = Get_var_itemsize;
+        model->get_var_units = Get_var_units;
+        model->get_var_nbytes = Get_var_nbytes;
+        model->get_var_location = Get_var_location;
+
+        model->get_current_time = Get_current_time;
         model->get_start_time = Get_start_time;
         model->get_end_time = Get_end_time;
+        model->get_time_units = Get_time_units;
+        model->get_time_step = Get_time_step;
+
+        model->get_value = Get_value;
+        model->get_value_ptr = Get_value_ptr;   
+        model->get_value_at_indices = Get_value_at_indices;
+
+        model->set_value = Set_value;
+        model->set_value_at_indices = Set_value_at_indices;
 
         model->get_grid_size = Get_grid_size;    
         model->get_grid_rank = Get_grid_rank;    
